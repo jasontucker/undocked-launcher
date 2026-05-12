@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.5.3';
+const VERSION = '1.5.4';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -263,7 +263,7 @@ async function getContainers(config, opts = {}) {
         || folderGroups[(displayNameFromTemplate(rawName) || '').toLowerCase()]
         || null;
     }
-    group = group || labels['com.docker.compose.project'] || 'Apps';
+    group = group || 'Apps';
 
     return {
       id: c.Id,
