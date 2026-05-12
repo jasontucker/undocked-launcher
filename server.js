@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.5.1';
+const VERSION = '1.5.2';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -97,8 +97,12 @@ function loadFolderViewGroups() {
 }
 
 function resolveIcon(name, labels) {
+  // Priority: homepage.icon → CasaOS icon → Unraid icon → CDN fallback
   const custom = labelVal(labels, 'icon');
   if (custom) return custom;
+  if (labels?.icon) return labels.icon;
+  const unraidIcon = labels?.['net.unraid.docker.icon']?.replace(/^'|'$/g, '');
+  if (unraidIcon) return unraidIcon;
   const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   return `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${normalized}.png`;
 }
