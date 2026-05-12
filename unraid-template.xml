@@ -8,28 +8,30 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/jasontucker/undocked-launcher/issues</Support>
   <Project>https://github.com/jasontucker/undocked-launcher</Project>
-  <Overview>Undocked Launcher is a homelab dashboard for Unraid. It auto-discovers all running Docker containers and displays them as a clean dark-themed grid with one-tap access via Cloudflare, Tailscale, and direct IP:port. Supports FolderView Plus grouping and automatically reads Tailscale hostnames set in the Unraid Docker manager.</Overview>
+  <Overview>Undocked Launcher is a self-hosted homelab dashboard for Unraid. It auto-discovers all running Docker containers and presents them as a clean, dark-themed grid with one-tap access via three methods: direct IP:port (green), Tailscale (purple), and Cloudflare Tunnel (orange).&#xD;&#xD;Features:&#xD;- Auto-discovery via Docker socket&#xD;- FolderView Plus grouping — mirrors your existing Unraid Docker folder layout&#xD;- Tailscale hostname auto-detection from the Unraid Docker manager&#xD;- Cloudflare Tunnel URL support using the same hostname as Tailscale&#xD;- Light and dark theme toggle&#xD;- Mobile-friendly responsive layout&#xD;- Custom app entries for non-Docker services&#xD;- Configurable icon size, text size, button size, and card width</Overview>
   <Category>Tools:Utilities</Category>
   <WebUI>http://[IP]:[PORT:7654]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/jasontucker/undocked-launcher/main/unraid-template.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/jasontucker/undocked-launcher/main/public/icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/jasontucker/undocked-launcher/main/undocked-launcher.png</Icon>
   <ExtraParams/>
   <Requires>FolderView Plus (optional) — for container grouping</Requires>
   <DateInstalled/>
   <DonateText/>
   <DonateLink/>
 
+  <!-- ── Ports ── -->
   <Config
     Name="Web UI Port"
     Target="3000"
     Default="7654"
     Mode="tcp"
-    Description="Port to access the Undocked Launcher web interface."
+    Description="Host port to access the Undocked Launcher web interface. Container listens on 3000 internally."
     Type="Port"
     Display="always"
     Required="true"
     Mask="false">7654</Config>
 
+  <!-- ── Paths ── -->
   <Config
     Name="Docker Socket"
     Target="/var/run/docker.sock"
@@ -46,7 +48,7 @@
     Target="/config"
     Default="/mnt/user/appdata/undocked-launcher/config"
     Mode="rw"
-    Description="Stores your settings (host IP, Cloudflare domain, Tailscale tailnet, custom apps)."
+    Description="Stores your settings: host IP, Cloudflare domain, Tailscale tailnet, display preferences, and custom apps."
     Type="Path"
     Display="always"
     Required="true"
@@ -57,7 +59,7 @@
     Target="/unraid-templates"
     Default="/boot/config/plugins/dockerMan/templates-user"
     Mode="ro"
-    Description="Used to auto-detect the Tailscale hostname configured for each container in the Unraid Docker manager."
+    Description="Used to auto-detect the Tailscale hostname set for each container in the Unraid Docker manager. Optional but recommended."
     Type="Path"
     Display="always"
     Required="false"
