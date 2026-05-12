@@ -21,11 +21,11 @@
 
   <!-- ── Ports ── -->
   <Config
-    Name="Web UI Port"
+    Name="WebUI Port (LAN)"
     Target="3000"
     Default="7654"
     Mode="tcp"
-    Description="Host port to access the Undocked Launcher web interface. Container listens on 3000 internally."
+    Description="LAN port on your Unraid server. Maps to container port 3000. Access the dashboard at http://&lt;your-ip&gt;:7654"
     Type="Port"
     Display="always"
     Required="true"
