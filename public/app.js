@@ -157,14 +157,16 @@ function renderCard(app) {
 
   return `
     <div class="box app-card">
-      ${iconHtml}
-      <div class="card-info">
-        <div class="card-name">${escHtml(app.name)}</div>
-        ${app.description ? `<div class="card-desc">${escHtml(app.description)}</div>` : ''}
+      <div class="card-main">
+        ${iconHtml}
+        <div class="card-info">
+          <div class="card-name">${escHtml(app.name)}</div>
+        </div>
+        <div class="card-actions">
+          ${directBtn}${tsBtn}${cfBtn}${deleteBtn}
+        </div>
       </div>
-      <div class="card-actions">
-        ${directBtn}${tsBtn}${cfBtn}${deleteBtn}
-      </div>
+      ${app.description ? `<div class="card-desc">${escHtml(app.description)}</div>` : ''}
     </div>`;
 }
 

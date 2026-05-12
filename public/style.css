@@ -94,10 +94,16 @@
 /* ── App card (extends Bulma .box) ── */
 .app-card {
   display: flex;
-  align-items: center;
-  gap: 11px;
+  flex-direction: column;
+  gap: 4px;
   padding: 9px 12px !important;
   margin-bottom: 0 !important;
+}
+
+.card-main {
+  display: flex;
+  align-items: center;
+  gap: 11px;
 }
 
 .card-icon-wrap {
@@ -273,9 +279,11 @@
   /* Larger cards */
   .app-card {
     padding: 16px 18px !important;
-    gap: 16px;
+    gap: 6px;
     border-radius: 16px !important;
   }
+
+  .card-main { gap: 16px; }
 
   /* Larger icons */
   .card-icon-wrap { width: 56px; height: 56px; }
