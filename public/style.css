@@ -31,9 +31,10 @@
 .group-label:first-child { margin-top: 0; }
 
 /* ── App grid ── */
+/* min(100%, ...) ensures cards never force multi-column when container is narrow */
 .app-smart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--min-card-width, 260px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--min-card-width, 260px)), 1fr));
   gap: 6px;
 }
 
@@ -168,11 +169,7 @@
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
-  /* Force single column regardless of min-card-width setting */
-  .app-smart-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
+  .app-smart-grid { gap: 10px; }
 
   .group-label { margin: 20px 0 8px; font-size: 0.8rem; }
 
