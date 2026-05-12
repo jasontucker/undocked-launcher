@@ -31,10 +31,10 @@
 .group-label:first-child { margin-top: 0; }
 
 /* ── App grid ── */
-/* min(100%, ...) ensures cards never force multi-column when container is narrow */
+/* --app-grid-cols is set by JS based on screen.width so viewport scale can't interfere */
 .app-smart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--min-card-width, 260px)), 1fr));
+  grid-template-columns: var(--app-grid-cols, repeat(auto-fill, minmax(260px, 1fr)));
   gap: 6px;
 }
 

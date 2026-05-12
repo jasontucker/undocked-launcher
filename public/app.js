@@ -148,10 +148,18 @@ document.getElementById('refreshBtn').addEventListener('click', fetchApps);
 
 function applyDisplaySettings(cfg) {
   const root = document.documentElement.style;
-  if (cfg.iconSize)     root.setProperty('--icon-size',                   cfg.iconSize + 'px');
-  if (cfg.textSize)     root.setProperty('--text-size',                   cfg.textSize + 'px');
-  if (cfg.buttonSize)   root.setProperty('--btn-size',                    cfg.buttonSize + 'px');
-  root.setProperty('--min-card-width', (cfg.minCardWidth || 260) + 'px');
+  if (cfg.iconSize)   root.setProperty('--icon-size', cfg.iconSize + 'px');
+  if (cfg.textSize)   root.setProperty('--text-size', cfg.textSize + 'px');
+  if (cfg.buttonSize) root.setProperty('--btn-size',  cfg.buttonSize + 'px');
+
+  // screen.width is in CSS points and is NOT affected by initial-scale/viewportScale,
+  // so it reliably identifies phones even when the viewport meta has been changed.
+  const isPhone = window.screen.width <= 600;
+  const gridCols = isPhone
+    ? '1fr'
+    : `repeat(auto-fill, minmax(${cfg.minCardWidth || 260}px, 1fr))`;
+  root.setProperty('--app-grid-cols', gridCols);
+
   if (cfg.viewportScale) {
     const vp = document.getElementById('viewportMeta');
     if (vp) vp.content = `width=device-width, initial-scale=${cfg.viewportScale}`;
