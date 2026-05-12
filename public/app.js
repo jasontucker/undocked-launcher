@@ -12,9 +12,9 @@ const ICON_TRASH = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke=
 
 // ── Fetch & Render ──────────────────────────────────────────────────────────
 async function fetchApps() {
-  document.getElementById('loadingState').classList.remove('hidden');
-  document.getElementById('appGrid').classList.add('hidden');
-  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('loadingState').classList.remove('is-hidden');
+  document.getElementById('appGrid').classList.add('is-hidden');
+  document.getElementById('emptyState').classList.add('is-hidden');
 
   try {
     const res = await fetch('/api/containers');
@@ -29,7 +29,7 @@ async function fetchApps() {
     console.error('Fetch error:', e);
     renderApps([]);
   } finally {
-    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('loadingState').classList.add('is-hidden');
   }
 }
 
@@ -38,15 +38,14 @@ function renderApps(apps) {
   const empty = document.getElementById('emptyState');
 
   if (!apps.length) {
-    grid.classList.add('hidden');
-    empty.classList.remove('hidden');
+    grid.classList.add('is-hidden');
+    empty.classList.remove('is-hidden');
     return;
   }
 
-  empty.classList.add('hidden');
-  grid.classList.remove('hidden');
+  empty.classList.add('is-hidden');
+  grid.classList.remove('is-hidden');
 
-  // Group
   const groups = {};
   for (const app of apps) {
     const g = app.group || 'Apps';
@@ -63,7 +62,6 @@ function renderApps(apps) {
     </div>
   `).join('');
 
-  // Delete buttons for custom apps
   grid.querySelectorAll('[data-delete]').forEach(btn => {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
@@ -102,17 +100,14 @@ function renderCard(app) {
     : '';
 
   return `
-    <div class="app-card">
+    <div class="box app-card">
       ${iconHtml}
       <div class="card-info">
         <div class="card-name">${escHtml(app.name)}</div>
         ${app.description ? `<div class="card-desc">${escHtml(app.description)}</div>` : ''}
       </div>
       <div class="card-actions">
-        ${directBtn}
-        ${tsBtn}
-        ${cfBtn}
-        ${deleteBtn}
+        ${directBtn}${tsBtn}${cfBtn}${deleteBtn}
       </div>
     </div>`;
 }
@@ -145,7 +140,7 @@ function applyDisplaySettings(cfg) {
   if (cfg.desktopCols) root.setProperty('--desktop-cols', cfg.desktopCols);
   if (cfg.mobileCols)  root.setProperty('--mobile-cols',  cfg.mobileCols);
   if (cfg.viewportScale) {
-    const vp = document.querySelector('meta[name="viewport"]');
+    const vp = document.getElementById('viewportMeta');
     if (vp) vp.content = `width=device-width, initial-scale=${cfg.viewportScale}`;
   }
 }
@@ -208,18 +203,15 @@ document.getElementById('saveCustomAppBtn').addEventListener('click', async () =
 });
 
 // ── Modal helpers ────────────────────────────────────────────────────────────
-function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function showModal(id) { document.getElementById(id).classList.add('is-active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('is-active'); }
 
 document.querySelectorAll('[data-close]').forEach(btn =>
   btn.addEventListener('click', () => closeModal(btn.dataset.close)));
 
-document.querySelectorAll('.modal-backdrop').forEach(b =>
-  b.addEventListener('click', e => { if (e.target === b) closeModal(b.id); }));
-
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape')
-    document.querySelectorAll('.modal-backdrop:not(.hidden)').forEach(m => closeModal(m.id));
+    document.querySelectorAll('.modal.is-active').forEach(m => closeModal(m.id));
 });
 
 fetchApps();

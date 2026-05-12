@@ -1,183 +1,259 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" id="viewportMeta" />
   <title>Undocked Launcher</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <div class="header-left">
-      <div class="logo">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="2" width="9" height="9" rx="2"/>
-          <rect x="13" y="2" width="9" height="9" rx="2"/>
-          <rect x="2" y="13" width="9" height="9" rx="2"/>
-          <rect x="13" y="13" width="9" height="9" rx="2"/>
-        </svg>
+  <nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <div class="navbar-item">
+        <span class="has-text-primary mr-2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="9" height="9" rx="2"/>
+            <rect x="13" y="2" width="9" height="9" rx="2"/>
+            <rect x="2" y="13" width="9" height="9" rx="2"/>
+            <rect x="13" y="13" width="9" height="9" rx="2"/>
+          </svg>
+        </span>
+        <span id="dashTitle" class="has-text-weight-semibold">Homelab Dashboard</span>
+        <span id="versionBadge" class="tag is-dark ml-2" style="font-size:0.65rem"></span>
       </div>
-      <h1 id="dashTitle">Homelab Dashboard</h1>
-      <span id="versionBadge" class="version-badge"></span>
     </div>
-    <div class="header-right">
-      <input type="search" id="searchInput" placeholder="Search apps…" autocomplete="off" />
-      <button class="icon-btn" id="addAppBtn" title="Add custom app">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
-      <button class="icon-btn" id="settingsBtn" title="Settings">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-      </button>
-      <button class="icon-btn" id="refreshBtn" title="Refresh">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-      </button>
+    <div class="navbar-menu is-active">
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <input class="input is-small" type="search" id="searchInput" placeholder="Search apps…" autocomplete="off" style="width:200px" />
+        </div>
+        <div class="navbar-item">
+          <div class="buttons">
+            <button class="button is-small" id="addAppBtn" title="Add custom app">
+              <span class="icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </span>
+            </button>
+            <button class="button is-small" id="settingsBtn" title="Settings">
+              <span class="icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </span>
+            </button>
+            <button class="button is-small" id="refreshBtn" title="Refresh">
+              <span class="icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  </header>
+  </nav>
 
-  <main id="mainContent">
-    <div class="loading" id="loadingState">
-      <div class="spinner"></div>
-      <p>Discovering containers…</p>
+  <main class="section main-content" id="mainContent">
+    <div class="has-text-centered py-6" id="loadingState">
+      <div class="app-spinner"></div>
+      <p class="has-text-grey mt-3">Discovering containers…</p>
     </div>
-    <div id="appGrid" class="hidden"></div>
-    <div id="emptyState" class="empty-state hidden">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-      <p>No containers found. <a href="#" id="openSettingsLink">Configure settings</a> or add a custom app.</p>
+    <div id="appGrid" class="is-hidden"></div>
+    <div id="emptyState" class="has-text-centered py-6 is-hidden">
+      <p class="has-text-grey">
+        No containers found.
+        <a href="#" id="openSettingsLink">Configure settings</a> or add a custom app.
+      </p>
     </div>
   </main>
 
   <!-- Settings Modal -->
-  <div class="modal-backdrop hidden" id="settingsModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Settings</h2>
-        <button class="close-btn" data-close="settingsModal">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Dashboard Title</label>
-          <input type="text" id="cfgTitle" placeholder="Homelab Dashboard" />
+  <div class="modal" id="settingsModal">
+    <div class="modal-background" data-close="settingsModal"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Settings</p>
+        <button class="delete" aria-label="close" data-close="settingsModal"></button>
+      </header>
+      <section class="modal-card-body">
+
+        <div class="field">
+          <label class="label is-small">Dashboard Title</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="cfgTitle" placeholder="Homelab Dashboard" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Unraid / Host IP Address</label>
-          <input type="text" id="cfgHostIP" placeholder="192.168.1.100" />
-          <small>Used for direct container port access links</small>
+        <div class="field">
+          <label class="label is-small">Host IP Address</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="cfgHostIP" placeholder="192.168.1.100" />
+          </div>
+          <p class="help">Used for direct container port access links</p>
         </div>
+
         <hr />
-        <h3>Cloudflare</h3>
-        <div class="form-group">
-          <label>Base Domain</label>
-          <input type="text" id="cfgCFDomain" placeholder="mydomain.com" />
-          <small>Containers will be linked as <code>https://&lt;name&gt;.mydomain.com</code></small>
+        <p class="heading mb-3">Cloudflare</p>
+        <div class="field">
+          <label class="label is-small">Base Domain</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="cfgCFDomain" placeholder="mydomain.com" />
+          </div>
+          <p class="help">Containers linked as <code>https://&lt;name&gt;.mydomain.com</code></p>
         </div>
+
         <hr />
-        <h3>Tailscale</h3>
-        <div class="form-group">
-          <label>Tailnet Domain (MagicDNS suffix)</label>
-          <input type="text" id="cfgTailnetDomain" placeholder="my-tailnet.ts.net" />
-          <small>Found at <strong>tailscale.com/admin/dns</strong> under your tailnet name</small>
+        <p class="heading mb-3">Tailscale</p>
+        <div class="field">
+          <label class="label is-small">Tailnet Domain (MagicDNS suffix)</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="cfgTailnetDomain" placeholder="my-tailnet.ts.net" />
+          </div>
+          <p class="help">Found at <strong>tailscale.com/admin/dns</strong></p>
         </div>
-        <p class="help-text" style="margin-top:6px">
+        <div class="notification is-dark p-3 is-size-7 mt-2">
           Each container's Tailscale URL is built from its <strong>Tailscale Hostname</strong>
           set in the Unraid Docker manager + this domain.<br/>
           e.g. hostname <code>movies</code> → <code>https://movies.my-tailnet.ts.net</code><br/><br/>
-          Add this Docker label to map the hostname automatically:<br/>
-          <code>homepage.tailscale.hostname=movies</code><br/>
-          (falls back to the container name if the label is absent)
-        </p>
+          Override per-container: <code>homepage.tailscale.hostname=movies</code>
+        </div>
+
         <hr />
-        <h3>Display</h3>
-        <div class="form-group">
-          <label>Icon Size (px)</label>
-          <input type="number" id="cfgIconSize" min="20" max="80" placeholder="38" />
+        <p class="heading mb-3">Display</p>
+        <div class="columns is-multiline">
+          <div class="column is-half">
+            <div class="field">
+              <label class="label is-small">Icon Size (px)</label>
+              <div class="control">
+                <input class="input is-small" type="number" id="cfgIconSize" min="20" max="80" placeholder="38" />
+              </div>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="field">
+              <label class="label is-small">Text Size (px)</label>
+              <div class="control">
+                <input class="input is-small" type="number" id="cfgTextSize" min="10" max="24" placeholder="13" />
+              </div>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="field">
+              <label class="label is-small">Button Size (px)</label>
+              <div class="control">
+                <input class="input is-small" type="number" id="cfgButtonSize" min="20" max="80" placeholder="30" />
+              </div>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="field">
+              <label class="label is-small">Desktop Columns</label>
+              <div class="control">
+                <input class="input is-small" type="number" id="cfgDesktopCols" min="1" max="10" placeholder="5" />
+              </div>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="field">
+              <label class="label is-small">Mobile Columns</label>
+              <div class="control">
+                <input class="input is-small" type="number" id="cfgMobileCols" min="1" max="4" placeholder="1" />
+              </div>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="field">
+              <label class="label is-small">Viewport Scale</label>
+              <div class="control">
+                <input class="input is-small" type="number" id="cfgViewportScale" min="0.5" max="2" step="0.1" placeholder="1.0" />
+              </div>
+              <p class="help">1.0 = default, 0.8 = zoomed out</p>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Text Size (px)</label>
-          <input type="number" id="cfgTextSize" min="10" max="24" placeholder="13" />
-        </div>
-        <div class="form-group">
-          <label>Button Size (px)</label>
-          <input type="number" id="cfgButtonSize" min="20" max="80" placeholder="30" />
-        </div>
-        <div class="form-group">
-          <label>Desktop Columns</label>
-          <input type="number" id="cfgDesktopCols" min="1" max="10" placeholder="5" />
-        </div>
-        <div class="form-group">
-          <label>Mobile Columns</label>
-          <input type="number" id="cfgMobileCols" min="1" max="4" placeholder="1" />
-        </div>
-        <div class="form-group">
-          <label>Viewport Scale</label>
-          <input type="number" id="cfgViewportScale" min="0.5" max="2" step="0.1" placeholder="1.0" />
-          <small>Controls the initial zoom level (1.0 = default, 0.8 = zoomed out, 1.5 = zoomed in)</small>
-        </div>
+
         <hr />
-        <p class="help-text">
-          Other per-container Docker labels:<br/>
+        <div class="notification is-dark p-3 is-size-7">
+          Docker labels for per-container overrides:<br/>
           <code>homepage.name=Radarr</code><br/>
           <code>homepage.description=Movie Manager</code><br/>
           <code>homepage.group=Media</code><br/>
           <code>homepage.icon=https://example.com/icon.png</code><br/>
           <code>homepage.cloudflare.url=https://radarr.mydomain.com</code><br/>
-          <code>homepage.tailscale.url=https://movies.my-tailnet.ts.net</code> (full override)<br/>
+          <code>homepage.tailscale.url=https://movies.my-tailnet.ts.net</code><br/>
           <code>homepage.direct.url=http://192.168.1.100:7878</code><br/>
-          <code>homepage.enable=false</code> (hide from dashboard)
-        </p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" data-close="settingsModal">Cancel</button>
-        <button class="btn-primary" id="saveSettingsBtn">Save Settings</button>
-      </div>
+          <code>homepage.enable=false</code>
+        </div>
+
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end gap-2">
+        <button class="button" data-close="settingsModal">Cancel</button>
+        <button class="button is-primary" id="saveSettingsBtn">Save Settings</button>
+      </footer>
     </div>
   </div>
 
   <!-- Add Custom App Modal -->
-  <div class="modal-backdrop hidden" id="addAppModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Add Custom App</h2>
-        <button class="close-btn" data-close="addAppModal">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Name <span class="required">*</span></label>
-          <input type="text" id="customName" placeholder="My App" />
+  <div class="modal" id="addAppModal">
+    <div class="modal-background" data-close="addAppModal"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Add Custom App</p>
+        <button class="delete" aria-label="close" data-close="addAppModal"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label is-small">Name <span class="has-text-danger">*</span></label>
+          <div class="control">
+            <input class="input is-small" type="text" id="customName" placeholder="My App" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Description</label>
-          <input type="text" id="customDesc" placeholder="Short description" />
+        <div class="field">
+          <label class="label is-small">Description</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="customDesc" placeholder="Short description" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Group / Category</label>
-          <input type="text" id="customGroup" placeholder="Apps" />
+        <div class="field">
+          <label class="label is-small">Group / Category</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="customGroup" placeholder="Apps" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Icon URL</label>
-          <input type="text" id="customIcon" placeholder="https://example.com/icon.png" />
+        <div class="field">
+          <label class="label is-small">Icon URL</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="customIcon" placeholder="https://example.com/icon.png" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Cloudflare URL</label>
-          <input type="text" id="customCFUrl" placeholder="https://app.mydomain.com" />
+        <div class="field">
+          <label class="label is-small">Cloudflare URL</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="customCFUrl" placeholder="https://app.mydomain.com" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Tailscale URL</label>
-          <input type="text" id="customTSUrl" placeholder="https://app.my-machine.ts.net" />
+        <div class="field">
+          <label class="label is-small">Tailscale URL</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="customTSUrl" placeholder="https://app.my-machine.ts.net" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Direct URL</label>
-          <input type="text" id="customDirectUrl" placeholder="http://192.168.1.100:8080" />
+        <div class="field">
+          <label class="label is-small">Direct URL</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="customDirectUrl" placeholder="http://192.168.1.100:8080" />
+          </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" data-close="addAppModal">Cancel</button>
-        <button class="btn-primary" id="saveCustomAppBtn">Add App</button>
-      </div>
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end gap-2">
+        <button class="button" data-close="addAppModal">Cancel</button>
+        <button class="button is-primary" id="saveCustomAppBtn">Add App</button>
+      </footer>
     </div>
   </div>
 
