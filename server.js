@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.3.2';
+const VERSION = '1.3.3';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });

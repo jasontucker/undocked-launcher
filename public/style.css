@@ -168,21 +168,37 @@
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
-  .app-card { padding: 18px 20px !important; gap: 18px; border-radius: 16px !important; }
+  /* Force single column regardless of min-card-width setting */
+  .app-smart-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 
-  .card-icon-wrap { width: 68px; height: 68px; }
-  .app-icon { width: 68px; height: 68px; border-radius: 14px; padding: 7px; }
-  .app-icon-fallback { width: 68px; height: 68px; border-radius: 14px; font-size: 1.3rem; }
+  .group-label { margin: 20px 0 8px; font-size: 0.8rem; }
 
-  .card-name { font-size: 1.25rem; font-weight: 700; }
-  .card-desc { font-size: 0.95rem; margin-top: 5px; }
+  /* Larger cards */
+  .app-card {
+    padding: 16px 18px !important;
+    gap: 16px;
+    border-radius: 16px !important;
+  }
 
-  .card-actions { gap: 10px; }
+  /* Larger icons */
+  .card-icon-wrap { width: 56px; height: 56px; }
+  .app-icon { width: 56px; height: 56px; border-radius: 12px; padding: 6px; }
+  .app-icon-fallback { width: 56px; height: 56px; border-radius: 12px; font-size: 1.15rem; }
+
+  /* Larger, readable text */
+  .card-name { font-size: 1.05rem; font-weight: 700; }
+  .card-desc { font-size: 0.875rem; margin-top: 4px; }
+
+  /* Tap-friendly action buttons (Apple HIG: 44pt minimum) */
+  .card-actions { gap: 8px; }
   .action-btn {
-    width: 68px;
-    height: 58px;
-    border-radius: 14px;
+    width: 60px;
+    height: 48px;
+    border-radius: 12px;
     border-width: 2px;
   }
-  .btn-svg { width: 28px; height: 28px; }
+  .btn-svg { width: 24px; height: 24px; }
 }
