@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.3.5';
+const VERSION = '1.3.6';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -236,10 +236,16 @@ async function getContainers(config) {
       tailscaleHostname: tsHostname,
       directUrl,
       port,
+      _forceShow: labelVal(labels, 'enable') === 'true',
     };
   });
 
-  return results.sort((a, b) => {
+  // Exclude containers with no web interface unless explicitly forced with homepage.enable=true
+  const webResults = results
+    .filter(r => r._forceShow || r.directUrl || r.tailscaleUrl || r.cloudflareUrl)
+    .map(({ _forceShow, ...r }) => r);
+
+  return webResults.sort((a, b) => {
     if (a.group !== b.group) return a.group.localeCompare(b.group);
     return a.name.localeCompare(b.name);
   });
