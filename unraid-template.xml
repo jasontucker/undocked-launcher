@@ -3,15 +3,29 @@
   <Name>undocked-launcher</Name>
   <Repository>ghcr.io/jasontucker/undocked-launcher:latest</Repository>
   <Registry>https://github.com/jasontucker/undocked-launcher/pkgs/container/undocked-launcher</Registry>
-  <Network>bridge</Network>
-  <Shell>sh</Shell>
-  <Privileged>false</Privileged>
-  <Support>https://github.com/jasontucker/undocked-launcher/issues</Support>
+  <GitHub>https://github.com/jasontucker/undocked-launcher</GitHub>
   <Project>https://github.com/jasontucker/undocked-launcher</Project>
-  <Overview>Undocked Launcher is a self-hosted homelab dashboard for Unraid. It auto-discovers all running Docker containers and presents them as a clean, dark-themed grid with one-tap access via three methods: direct IP:port (green), Tailscale (purple), and Cloudflare Tunnel (orange).&#xD;&#xD;Features:&#xD;- Auto-discovery via Docker socket&#xD;- FolderView Plus grouping — mirrors your existing Unraid Docker folder layout&#xD;- Tailscale hostname auto-detection from the Unraid Docker manager&#xD;- Cloudflare Tunnel URL support using the same hostname as Tailscale&#xD;- Light and dark theme toggle&#xD;- Mobile-friendly responsive layout&#xD;- Custom app entries for non-Docker services&#xD;- Configurable icon size, text size, button size, and card width</Overview>
+  <Support>https://github.com/jasontucker/undocked-launcher/issues</Support>
   <Category>Tools:Utilities</Category>
+  <Beta>False</Beta>
+  <Privileged>false</Privileged>
+  <BindTime>true</BindTime>
+  <Shell>sh</Shell>
+
+  <Overview>Undocked Launcher is a self-hosted homelab dashboard for Unraid. It auto-discovers all running Docker containers and presents them as a clean, dark-themed grid with one-tap access via three methods: direct IP:port (green), Tailscale (purple), and Cloudflare Tunnel (orange).&#xD;&#xD;Features:&#xD;- Auto-discovery via Docker socket&#xD;- FolderView Plus grouping — mirrors your existing Unraid Docker folder layout&#xD;- Tailscale hostname auto-detection from the Unraid Docker manager&#xD;- Cloudflare Tunnel URL support using the same hostname as Tailscale&#xD;- Light and dark theme toggle&#xD;- Mobile-friendly responsive layout&#xD;- Custom app entries for non-Docker services&#xD;- Configurable icon size, text size, button size, and card width</Overview>
+
+  <Description>
+    [b]Undocked Launcher[/b] — a self-hosted homelab dashboard that auto-discovers your Docker containers.[br][br]
+    [b][span style='color: #E80000;']Setup:[/span][/b][br]
+    [b]Web UI Port (LAN):[/b] The port on your Unraid server to access the dashboard. Default is 7654. Maps to container port 3000.[br][br]
+    [b]Docker Socket:[/b] Required for container auto-discovery. Must be mounted read-only.[br][br]
+    [b]Config Storage:[/b] Where your settings (host IP, domains, display preferences, custom apps) are saved.[br][br]
+    [b]Unraid Docker Templates:[/b] Optional. Used to auto-detect the Tailscale hostname set for each container in the Unraid Docker manager.[br][br]
+    [b]FolderView Plus Config:[/b] Optional. Groups containers using your existing FolderView Plus folder assignments. Requires the FolderView Plus Unraid plugin.[br][br]
+    [b]Tip:[/b] After starting the container, open Settings (gear icon) to set your Host IP, Tailnet Domain, and Cloudflare Base Domain.
+  </Description>
+
   <WebUI>http://[IP]:[PORT:7654]/</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/jasontucker/undocked-launcher/main/unraid-template.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/jasontucker/undocked-launcher/main/undocked-launcher.png</Icon>
   <ExtraParams/>
   <Requires>FolderView Plus (optional) — for container grouping</Requires>
@@ -19,7 +33,19 @@
   <DonateText/>
   <DonateLink/>
 
-  <!-- ── Ports ── -->
+  <!-- ── Networking ── -->
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>7654</HostPort>
+        <ContainerPort>3000</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+
+  <!-- ── Ports (CA v2) ── -->
   <Config
     Name="WebUI Port (LAN)"
     Target="3000"
@@ -32,6 +58,29 @@
     Mask="false">7654</Config>
 
   <!-- ── Paths ── -->
+  <Data>
+    <Volume>
+      <HostDir>/var/run/docker.sock</HostDir>
+      <ContainerDir>/var/run/docker.sock</ContainerDir>
+      <Mode>ro</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/user/appdata/undocked-launcher/config</HostDir>
+      <ContainerDir>/config</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/boot/config/plugins/dockerMan/templates-user</HostDir>
+      <ContainerDir>/unraid-templates</ContainerDir>
+      <Mode>ro</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/boot/config/plugins/folderview.plus</HostDir>
+      <ContainerDir>/folderview-config</ContainerDir>
+      <Mode>ro</Mode>
+    </Volume>
+  </Data>
+
   <Config
     Name="Docker Socket"
     Target="/var/run/docker.sock"
