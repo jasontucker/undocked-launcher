@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.5.5';
+const VERSION = '1.5.6';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -94,6 +94,19 @@ function loadFolderViewGroups() {
     folderViewCacheTime = now;
     return {};
   }
+}
+
+function stripMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1') // ![alt](url) → alt
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // [text](url) → text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')         // **bold** → bold
+    .replace(/\*([^*]+)\*/g, '$1')             // *italic* → italic
+    .replace(/`([^`]+)`/g, '$1')              // `code` → code
+    .replace(/^#{1,6}\s+/gm, '')              // # headers
+    .replace(/\n+/g, ' ')                     // newlines → space
+    .trim();
 }
 
 function resolveIcon(name, labels) {
@@ -270,7 +283,7 @@ async function getContainers(config, opts = {}) {
       name,
       rawName,
       description: labelVal(labels, 'description')
-        || labels['org.opencontainers.image.description']
+        || stripMarkdown(labels['org.opencontainers.image.description'])
         || '',
       group,
       icon: resolveIcon(rawName, labels),
