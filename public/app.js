@@ -71,8 +71,8 @@ function renderApps(apps) {
 
   grid.innerHTML = sortedGroups.map(group => `
     <div class="group-label">${escHtml(group)}</div>
-    <div class="grid">
-      ${groups[group].map(app => `<div class="cell">${renderCard(app)}</div>`).join('')}
+    <div class="app-smart-grid">
+      ${groups[group].map(app => renderCard(app)).join('')}
     </div>
   `).join('');
 
