@@ -272,6 +272,8 @@
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
+  .card-desc { display: none; }
+
   .app-smart-grid { gap: 10px; }
 
   .group-label { margin: 20px 0 8px; font-size: 0.8rem; }
