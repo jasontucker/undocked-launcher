@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.3.6';
+const VERSION = '1.3.7';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -223,6 +223,13 @@ async function getContainers(config) {
     const directUrl = labelVal(labels, 'direct.url') ||
       (port ? `http://${hostIP}:${port}` : null);
 
+    // A container has a web interface if it exposes a port OR has an explicit URL label.
+    // Auto-generated Tailscale/Cloudflare URLs don't count — every container gets those.
+    const hasWebInterface = !!port
+      || !!labelVal(labels, 'direct.url')
+      || !!labelVal(labels, 'tailscale.url')
+      || !!labelVal(labels, 'cloudflare.url');
+
     return {
       id: c.Id,
       name,
@@ -237,13 +244,14 @@ async function getContainers(config) {
       directUrl,
       port,
       _forceShow: labelVal(labels, 'enable') === 'true',
+      _hasWebInterface: hasWebInterface,
     };
   });
 
   // Exclude containers with no web interface unless explicitly forced with homepage.enable=true
   const webResults = results
-    .filter(r => r._forceShow || r.directUrl || r.tailscaleUrl || r.cloudflareUrl)
-    .map(({ _forceShow, ...r }) => r);
+    .filter(r => r._forceShow || r._hasWebInterface)
+    .map(({ _forceShow, _hasWebInterface, ...r }) => r);
 
   return webResults.sort((a, b) => {
     if (a.group !== b.group) return a.group.localeCompare(b.group);
