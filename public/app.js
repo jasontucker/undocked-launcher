@@ -151,7 +151,7 @@ function applyDisplaySettings(cfg) {
   if (cfg.iconSize)     root.setProperty('--icon-size',                   cfg.iconSize + 'px');
   if (cfg.textSize)     root.setProperty('--text-size',                   cfg.textSize + 'px');
   if (cfg.buttonSize)   root.setProperty('--btn-size',                    cfg.buttonSize + 'px');
-  root.setProperty('--bulma-grid-min-cell-width', (cfg.minCardWidth || 260) + 'px');
+  root.setProperty('--min-card-width', (cfg.minCardWidth || 260) + 'px');
   if (cfg.viewportScale) {
     const vp = document.getElementById('viewportMeta');
     if (vp) vp.content = `width=device-width, initial-scale=${cfg.viewportScale}`;

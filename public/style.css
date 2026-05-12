@@ -1,5 +1,5 @@
 :root {
-  --bulma-grid-min-cell-width: 260px;
+  --min-card-width: 260px;
 
   --icon-size: 38px;
   --text-size: 13px;
@@ -16,6 +16,11 @@
   padding-top: 4.5rem;
   max-width: 1600px;
   margin: 0 auto;
+}
+
+/* Override Bulma's .grid variable via our own bridge var on :root */
+.grid {
+  --bulma-grid-min-cell-width: var(--min-card-width, 260px);
 }
 
 /* ── Group label ── */
