@@ -9,14 +9,16 @@ A self-hosted homelab dashboard that runs in Docker on Unraid. Automatically dis
 ## Features
 
 - **Auto-discovery** — reads all running containers via the Docker socket
-- **FolderView Plus grouping** — containers are grouped using your existing FolderView Plus folder assignments
+- **FolderView Plus grouping** — mirrors your existing Unraid Docker folder layout; works even if containers are renamed
 - **Tailscale support** — automatically reads the Tailscale hostname set in the Unraid Docker manager for each container
 - **Cloudflare support** — uses the same hostname as Tailscale to build Cloudflare tunnel URLs
 - **Three access buttons per app** — direct IP:port (green), Tailscale (purple), Cloudflare (orange)
+- **Light and dark theme** — toggle in the navbar, persisted across sessions
 - **Mobile-friendly** — responsive layout with large tap targets on phones
 - **Custom apps** — add non-Docker services manually via the UI
+- **Configurable display** — icon size, text size, button size, card width, and viewport scale via Settings
+- **Auto-hides system containers** — only shows containers with a web interface unless explicitly forced with `homepage.enable=true`
 - **Live version badge** — always know what's running
-- **No auto-refresh** — loads fresh data on every page visit
 
 ---
 
