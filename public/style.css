@@ -1,4 +1,6 @@
 :root {
+  --bulma-grid-min-cell-width: 260px;
+
   --icon-size: 38px;
   --text-size: 13px;
   --btn-size: 30px;
