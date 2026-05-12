@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.3.8';
+const VERSION = '1.3.9';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -341,5 +341,5 @@ app.delete('/api/custom-apps/:name', (req, res) => {
   res.json({ ok: true });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 7654;
 app.listen(PORT, () => console.log(`Undocked Launcher v${VERSION} running on http://localhost:${PORT}`));
