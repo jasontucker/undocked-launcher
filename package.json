@@ -1,0 +1,14 @@
+{
+  "name": "undocked-launcher",
+  "version": "1.2.3",
+  "description": "Undocked Launcher — a homelab dashboard for Unraid with Cloudflare, Tailscale, and direct IP access",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.2",
+    "express": "^4.18.2"
+  }
+}

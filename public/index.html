@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Undocked Launcher</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="9" height="9" rx="2"/>
+          <rect x="13" y="2" width="9" height="9" rx="2"/>
+          <rect x="2" y="13" width="9" height="9" rx="2"/>
+          <rect x="13" y="13" width="9" height="9" rx="2"/>
+        </svg>
+      </div>
+      <h1 id="dashTitle">Homelab Dashboard</h1>
+      <span id="versionBadge" class="version-badge"></span>
+    </div>
+    <div class="header-right">
+      <input type="search" id="searchInput" placeholder="Search apps…" autocomplete="off" />
+      <button class="icon-btn" id="addAppBtn" title="Add custom app">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="icon-btn" id="settingsBtn" title="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="refreshBtn" title="Refresh">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="mainContent">
+    <div class="loading" id="loadingState">
+      <div class="spinner"></div>
+      <p>Discovering containers…</p>
+    </div>
+    <div id="appGrid" class="hidden"></div>
+    <div id="emptyState" class="empty-state hidden">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <p>No containers found. <a href="#" id="openSettingsLink">Configure settings</a> or add a custom app.</p>
+    </div>
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop hidden" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="close-btn" data-close="settingsModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Dashboard Title</label>
+          <input type="text" id="cfgTitle" placeholder="Homelab Dashboard" />
+        </div>
+        <div class="form-group">
+          <label>Unraid / Host IP Address</label>
+          <input type="text" id="cfgHostIP" placeholder="192.168.1.100" />
+          <small>Used for direct container port access links</small>
+        </div>
+        <hr />
+        <h3>Cloudflare</h3>
+        <div class="form-group">
+          <label>Base Domain</label>
+          <input type="text" id="cfgCFDomain" placeholder="mydomain.com" />
+          <small>Containers will be linked as <code>https://&lt;name&gt;.mydomain.com</code></small>
+        </div>
+        <hr />
+        <h3>Tailscale</h3>
+        <div class="form-group">
+          <label>Tailnet Domain (MagicDNS suffix)</label>
+          <input type="text" id="cfgTailnetDomain" placeholder="my-tailnet.ts.net" />
+          <small>Found at <strong>tailscale.com/admin/dns</strong> under your tailnet name</small>
+        </div>
+        <p class="help-text" style="margin-top:6px">
+          Each container's Tailscale URL is built from its <strong>Tailscale Hostname</strong>
+          set in the Unraid Docker manager + this domain.<br/>
+          e.g. hostname <code>movies</code> → <code>https://movies.my-tailnet.ts.net</code><br/><br/>
+          Add this Docker label to map the hostname automatically:<br/>
+          <code>homepage.tailscale.hostname=movies</code><br/>
+          (falls back to the container name if the label is absent)
+        </p>
+        <hr />
+        <p class="help-text">
+          Other per-container Docker labels:<br/>
+          <code>homepage.name=Radarr</code><br/>
+          <code>homepage.description=Movie Manager</code><br/>
+          <code>homepage.group=Media</code><br/>
+          <code>homepage.icon=https://example.com/icon.png</code><br/>
+          <code>homepage.cloudflare.url=https://radarr.mydomain.com</code><br/>
+          <code>homepage.tailscale.url=https://movies.my-tailnet.ts.net</code> (full override)<br/>
+          <code>homepage.direct.url=http://192.168.1.100:7878</code><br/>
+          <code>homepage.enable=false</code> (hide from dashboard)
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="settingsModal">Cancel</button>
+        <button class="btn-primary" id="saveSettingsBtn">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Custom App Modal -->
+  <div class="modal-backdrop hidden" id="addAppModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add Custom App</h2>
+        <button class="close-btn" data-close="addAppModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Name <span class="required">*</span></label>
+          <input type="text" id="customName" placeholder="My App" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="customDesc" placeholder="Short description" />
+        </div>
+        <div class="form-group">
+          <label>Group / Category</label>
+          <input type="text" id="customGroup" placeholder="Apps" />
+        </div>
+        <div class="form-group">
+          <label>Icon URL</label>
+          <input type="text" id="customIcon" placeholder="https://example.com/icon.png" />
+        </div>
+        <div class="form-group">
+          <label>Cloudflare URL</label>
+          <input type="text" id="customCFUrl" placeholder="https://app.mydomain.com" />
+        </div>
+        <div class="form-group">
+          <label>Tailscale URL</label>
+          <input type="text" id="customTSUrl" placeholder="https://app.my-machine.ts.net" />
+        </div>
+        <div class="form-group">
+          <label>Direct URL</label>
+          <input type="text" id="customDirectUrl" placeholder="http://192.168.1.100:8080" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="addAppModal">Cancel</button>
+        <button class="btn-primary" id="saveCustomAppBtn">Add App</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

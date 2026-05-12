@@ -1,0 +1,28 @@
+services:
+  unraid-dashboard:
+    build: .
+    container_name: undocked-launcher
+    restart: unless-stopped
+    ports:
+      - "7654:3000"
+    volumes:
+      # Required: read access to Docker socket for container discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Persistent config (settings, custom apps)
+      - ./config:/config
+      # Unraid Docker template XMLs — used to read Tailscale hostnames automatically
+      - /boot/config/plugins/dockerMan/templates-user:/unraid-templates:ro
+      # FolderView Plus config — used to read container group/folder assignments
+      - /boot/config/plugins/folderview.plus:/folderview-config:ro
+    environment:
+      - PORT=3000
+    # Optional: read-only root filesystem for security
+    # read_only: true
+    # tmpfs:
+    #   - /tmp
+    labels:
+      - "homepage.enable=true"
+      - "homepage.name=Dashboard"
+      - "homepage.description=Homelab Dashboard"
+      - "homepage.group=System"
+      - "homepage.icon=heimdall"

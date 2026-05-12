@@ -1,0 +1,199 @@
+let allApps = [];
+let config = {};
+
+// ── SVG Icons ──────────────────────────────────────────────────────────────
+const ICON_LINK = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+
+const ICON_TS = `<svg class="btn-svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="3" r="2.2"/><circle cx="21" cy="12" r="2.2"/><circle cx="12" cy="21" r="2.2"/><circle cx="3" cy="12" r="2.2"/><circle cx="18.4" cy="5.6" r="2.2"/><circle cx="18.4" cy="18.4" r="2.2"/><circle cx="5.6" cy="18.4" r="2.2"/><circle cx="5.6" cy="5.6" r="2.2"/><circle cx="12" cy="12" r="2.2"/></svg>`;
+
+const ICON_CF = `<svg class="btn-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.2 10.6c-.1-.6-.5-1-.9-1.3-.5-.3-1-.4-1.6-.3l-.2.1c-.2-.6-.5-1.1-1-1.5-.6-.5-1.4-.8-2.2-.8-1.6 0-2.9 1.1-3.3 2.6h-.1c-1.5.1-2.7 1.4-2.7 2.9 0 1.6 1.3 2.9 2.9 2.9h8.2c1.1 0 2-.9 2-2 0-1-.7-1.9-1.6-2.3-.2-.1-.3-.2-.5-.3z"/></svg>`;
+
+const ICON_TRASH = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
+// ── Fetch & Render ──────────────────────────────────────────────────────────
+async function fetchApps() {
+  document.getElementById('loadingState').classList.remove('hidden');
+  document.getElementById('appGrid').classList.add('hidden');
+  document.getElementById('emptyState').classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/containers');
+    const data = await res.json();
+    allApps = data.apps || [];
+    config = data.config || {};
+    document.getElementById('dashTitle').textContent = config.title || 'Homelab Dashboard';
+    if (data.version) document.getElementById('versionBadge').textContent = `v${data.version}`;
+    renderApps(allApps);
+  } catch (e) {
+    console.error('Fetch error:', e);
+    renderApps([]);
+  } finally {
+    document.getElementById('loadingState').classList.add('hidden');
+  }
+}
+
+function renderApps(apps) {
+  const grid = document.getElementById('appGrid');
+  const empty = document.getElementById('emptyState');
+
+  if (!apps.length) {
+    grid.classList.add('hidden');
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  grid.classList.remove('hidden');
+
+  // Group
+  const groups = {};
+  for (const app of apps) {
+    const g = app.group || 'Apps';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(app);
+  }
+
+  const sortedGroups = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+
+  grid.innerHTML = sortedGroups.map(group => `
+    <div class="group-label">${escHtml(group)}</div>
+    <div class="app-grid">
+      ${groups[group].map(renderCard).join('')}
+    </div>
+  `).join('');
+
+  // Delete buttons for custom apps
+  grid.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const name = btn.dataset.delete;
+      if (!confirm(`Remove "${name}"?`)) return;
+      await fetch(`/api/custom-apps/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      fetchApps();
+    });
+  });
+}
+
+function renderCard(app) {
+  const isCustom = app.id?.startsWith('custom-');
+
+  const iconHtml = `
+    <div class="card-icon-wrap">
+      <img class="app-icon" src="${escHtml(app.icon)}" alt="" loading="lazy"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="app-icon-fallback" style="display:none">${escHtml(app.name.slice(0,2))}</div>
+    </div>`;
+
+  const directBtn = app.directUrl
+    ? `<a class="action-btn btn-direct" href="${escHtml(app.directUrl)}" target="_blank" rel="noopener" title="Direct — ${escHtml(app.directUrl)}">${ICON_LINK}</a>`
+    : `<span class="action-btn btn-direct disabled" title="No port exposed">${ICON_LINK}</span>`;
+
+  const tsBtn = app.tailscaleUrl
+    ? `<a class="action-btn btn-ts" href="${escHtml(app.tailscaleUrl)}" target="_blank" rel="noopener" title="Tailscale — ${escHtml(app.tailscaleUrl)}">${ICON_TS}</a>`
+    : `<span class="action-btn btn-ts disabled" title="Tailscale not configured">${ICON_TS}</span>`;
+
+  const cfBtn = app.cloudflareUrl
+    ? `<a class="action-btn btn-cf" href="${escHtml(app.cloudflareUrl)}" target="_blank" rel="noopener" title="Cloudflare — ${escHtml(app.cloudflareUrl)}">${ICON_CF}</a>`
+    : `<span class="action-btn btn-cf disabled" title="Cloudflare not configured">${ICON_CF}</span>`;
+
+  const deleteBtn = isCustom
+    ? `<button class="action-btn btn-delete" data-delete="${escHtml(app.name)}" title="Remove">${ICON_TRASH}</button>`
+    : '';
+
+  return `
+    <div class="app-card">
+      ${iconHtml}
+      <div class="card-info">
+        <div class="card-name">${escHtml(app.name)}</div>
+        ${app.description ? `<div class="card-desc">${escHtml(app.description)}</div>` : ''}
+      </div>
+      <div class="card-actions">
+        ${directBtn}
+        ${tsBtn}
+        ${cfBtn}
+        ${deleteBtn}
+      </div>
+    </div>`;
+}
+
+function escHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ── Search ──────────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase().trim();
+  renderApps(q ? allApps.filter(a =>
+    a.name.toLowerCase().includes(q) ||
+    (a.description || '').toLowerCase().includes(q) ||
+    (a.group || '').toLowerCase().includes(q)
+  ) : allApps);
+});
+
+// ── Settings modal ──────────────────────────────────────────────────────────
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('openSettingsLink')?.addEventListener('click', e => { e.preventDefault(); openSettings(); });
+document.getElementById('refreshBtn').addEventListener('click', fetchApps);
+
+function openSettings() {
+  document.getElementById('cfgTitle').value = config.title || '';
+  document.getElementById('cfgHostIP').value = config.hostIP || '';
+  document.getElementById('cfgCFDomain').value = config.cloudflareDomain || '';
+  document.getElementById('cfgTailnetDomain').value = config.tailnetDomain || '';
+  showModal('settingsModal');
+}
+
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+  const payload = {
+    title: document.getElementById('cfgTitle').value.trim() || 'Homelab Dashboard',
+    hostIP: document.getElementById('cfgHostIP').value.trim(),
+    cloudflareDomain: document.getElementById('cfgCFDomain').value.trim(),
+    tailnetDomain: document.getElementById('cfgTailnetDomain').value.trim(),
+  };
+  await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  closeModal('settingsModal');
+  fetchApps();
+});
+
+// ── Add Custom App ──────────────────────────────────────────────────────────
+document.getElementById('addAppBtn').addEventListener('click', () => {
+  ['customName','customDesc','customGroup','customIcon','customCFUrl','customTSUrl','customDirectUrl']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  showModal('addAppModal');
+});
+
+document.getElementById('saveCustomAppBtn').addEventListener('click', async () => {
+  const name = document.getElementById('customName').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  const payload = {
+    name,
+    description: document.getElementById('customDesc').value.trim(),
+    group: document.getElementById('customGroup').value.trim() || 'Apps',
+    icon: document.getElementById('customIcon').value.trim() ||
+      `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${name.toLowerCase().replace(/\s+/g,'-')}.png`,
+    cloudflareUrl: document.getElementById('customCFUrl').value.trim() || null,
+    tailscaleUrl: document.getElementById('customTSUrl').value.trim() || null,
+    directUrl: document.getElementById('customDirectUrl').value.trim() || null,
+  };
+  await fetch('/api/custom-apps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  closeModal('addAppModal');
+  fetchApps();
+});
+
+// ── Modal helpers ────────────────────────────────────────────────────────────
+function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+document.querySelectorAll('[data-close]').forEach(btn =>
+  btn.addEventListener('click', () => closeModal(btn.dataset.close)));
+
+document.querySelectorAll('.modal-backdrop').forEach(b =>
+  b.addEventListener('click', e => { if (e.target === b) closeModal(b.id); }));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape')
+    document.querySelectorAll('.modal-backdrop:not(.hidden)').forEach(m => closeModal(m.id));
+});
+
+fetchApps();
