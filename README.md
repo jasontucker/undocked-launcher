@@ -39,25 +39,51 @@ A self-hosted homelab dashboard that runs in Docker on Unraid. Automatically dis
 
 ## Installation
 
-### 1. Copy files to Unraid
+### Option A — Unraid Community Applications
+
+1. In Unraid go to **Apps → Settings → Template Repositories** and add:
+   ```
+   https://raw.githubusercontent.com/jasontucker/undocked-launcher/main/
+   ```
+2. Click **Save**, then search for **undocked-launcher** in the Apps store
+3. Click **Install** and fill in the config fields — defaults are pre-filled
+
+---
+
+### Option B — Clone with Git and Docker Compose
+
+Unraid doesn't include Git by default. Install it first via **Nerd Tools** (available in Community Applications), then open the Unraid terminal:
+
+#### 1. Install Git via Nerd Tools
+
+In Unraid: **Apps → search "nerdtools"** → Install → enable **git** from the Nerd Tools settings page.
+
+#### 2. Clone the repo
 
 ```bash
-mkdir -p /mnt/user/appdata/undocked-launcher
+cd /mnt/user/appdata
+git clone https://github.com/jasontucker/undocked-launcher.git
+cd undocked-launcher
 ```
 
-Copy the project files to `/mnt/user/appdata/undocked-launcher/` via SCP or your file manager.
-
-### 2. Deploy with Docker Compose
+#### 3. Build and start
 
 ```bash
-cd /mnt/user/appdata/undocked-launcher
 docker compose up -d --build
 ```
 
-### 3. Open the dashboard
+#### 4. Open the dashboard
 
 ```
 http://<your-unraid-ip>:7654
+```
+
+#### Updating to the latest version
+
+```bash
+cd /mnt/user/appdata/undocked-launcher
+git pull
+docker compose up -d --build
 ```
 
 ---
