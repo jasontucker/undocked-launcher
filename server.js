@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.4.0';
+const VERSION = '1.5.0';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -20,6 +20,7 @@ const DEFAULT_CONFIG = {
   buttonSize: 30,
   minCardWidth: 260,
   viewportScale: 1.0,
+  remoteServers: [],
 };
 
 app.use(express.json());
@@ -47,17 +48,6 @@ function labelVal(labels, key) {
   return labels?.[`homepage.${key}`] || null;
 }
 
-function buildDirectURL(hostIP, ports) {
-  if (!ports || !hostIP) return null;
-  for (const binding of Object.values(ports)) {
-    if (Array.isArray(binding) && binding.length > 0) {
-      const port = binding[0].HostPort;
-      if (port) return `http://${hostIP}:${port}`;
-    }
-  }
-  return null;
-}
-
 function getFirstPort(ports) {
   if (!ports) return null;
   for (const [proto, binding] of Object.entries(ports)) {
@@ -68,8 +58,7 @@ function getFirstPort(ports) {
   return null;
 }
 
-// FolderView Plus group lookup.
-// Tries several common file locations and formats used by the Unraid plugin.
+// FolderView Plus group lookup — 30s local cache
 const FOLDERVIEW_DIR = process.env.FOLDERVIEW_DIR || '/folderview-config';
 let folderViewCache = null;
 let folderViewCacheTime = 0;
@@ -78,10 +67,7 @@ function loadFolderViewGroups() {
   const now = Date.now();
   if (folderViewCache && now - folderViewCacheTime < 30_000) return folderViewCache;
 
-  // FolderView Plus stores folder assignments in docker.json.
-  // Format: { "<randomId>": { "name": "FolderName", "containers": ["app1", "app2"] } }
   const file = path.join(FOLDERVIEW_DIR, 'docker.json');
-
   try {
     if (!fs.existsSync(file)) {
       console.warn(`FolderView: docker.json not found at ${file}`);
@@ -89,10 +75,8 @@ function loadFolderViewGroups() {
       folderViewCacheTime = now;
       return {};
     }
-
     const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
     const map = {};
-
     for (const folder of Object.values(parsed)) {
       if (folder.name && Array.isArray(folder.containers)) {
         for (const containerName of folder.containers) {
@@ -100,7 +84,6 @@ function loadFolderViewGroups() {
         }
       }
     }
-
     folderViewCache = map;
     folderViewCacheTime = now;
     console.log(`FolderView: loaded ${Object.keys(map).length} container→group mappings`);
@@ -120,8 +103,6 @@ function resolveIcon(name, labels) {
   return `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${normalized}.png`;
 }
 
-// Extract Tailscale hostname from container environment variables.
-// Unraid sets one of these when "Tailscale Hostname" is configured in the Docker manager.
 function tsHostnameFromEnv(envArray) {
   if (!Array.isArray(envArray)) return null;
   const keys = ['TAILSCALE_HOSTNAME', 'TS_HOSTNAME', 'TAILSCALE_NAME', 'TS_EXTRA_ARGS'];
@@ -131,7 +112,6 @@ function tsHostnameFromEnv(envArray) {
     const k = entry.slice(0, eqIdx);
     const v = entry.slice(eqIdx + 1);
     if (keys.includes(k) && v) {
-      // TS_EXTRA_ARGS may contain --hostname=foo
       if (k === 'TS_EXTRA_ARGS') {
         const m = v.match(/--hostname[= ]([^\s]+)/);
         if (m) return m[1];
@@ -143,8 +123,6 @@ function tsHostnameFromEnv(envArray) {
   return null;
 }
 
-// Read Tailscale hostname from Unraid's Docker template XML files.
-// Templates live at /boot/config/plugins/dockerMan/templates-user/<ContainerName>.xml
 const TEMPLATES_DIR = process.env.UNRAID_TEMPLATES_DIR || '/unraid-templates';
 
 function readTemplateXml(containerName) {
@@ -157,8 +135,6 @@ function readTemplateXml(containerName) {
   }
 }
 
-// Returns the Unraid display name (<Name> field) from the template XML.
-// FolderView Plus uses this name, not the Docker container name.
 function displayNameFromTemplate(containerName) {
   const xml = readTemplateXml(containerName);
   if (!xml) return null;
@@ -175,7 +151,6 @@ function tsHostnameFromTemplate(containerName) {
       || xml.match(/<Tailscale[^>]*>\s*<Enabled[^>]*>([^<]+)<\/Enabled>/i);
     if (enabledMatch && enabledMatch[1].trim().toLowerCase() !== 'true') return null;
 
-    // Extract the hostname field
     const hostnameMatch = xml.match(/<TailscaleHostname[^>]*>([^<]+)<\/TailscaleHostname>/i)
       || xml.match(/<Tailscale[^>]*>[\s\S]*?<Hostname[^>]*>([^<]+)<\/Hostname>/i);
     return hostnameMatch ? hostnameMatch[1].trim() : null;
@@ -184,20 +159,44 @@ function tsHostnameFromTemplate(containerName) {
   }
 }
 
-async function inspectContainer(id) {
+async function inspectContainerWith(dockerClient, id) {
   try {
-    return await docker.getContainer(id).inspect();
+    return await dockerClient.getContainer(id).inspect();
   } catch {
     return null;
   }
 }
 
-async function getContainers(config) {
+// Remote server cache — 5 minute TTL
+const remoteCache = new Map();
+const REMOTE_CACHE_TTL = 5 * 60 * 1000;
+
+function createDockerClient(server) {
+  if (server.connectionType === 'ssh') {
+    return new Docker({
+      protocol: 'ssh',
+      host: server.host,
+      port: server.sshPort || 22,
+      username: server.sshUser || 'root',
+      sshAuthAgent: process.env.SSH_AUTH_SOCK || undefined,
+    });
+  }
+  return new Docker({
+    host: server.host,
+    port: server.port || 2375,
+    protocol: 'http',
+  });
+}
+
+async function getContainers(config, opts = {}) {
+  const { dockerClient = docker, useLocalFeatures = true, serverHostIP } = opts;
+  const hostIP = serverHostIP || config.hostIP || 'localhost';
+
   let containers;
   try {
-    containers = await docker.listContainers({ all: false });
+    containers = await dockerClient.listContainers({ all: false });
   } catch (e) {
-    console.error('Docker socket error:', e.message);
+    console.error('Docker error:', e.message);
     return [];
   }
 
@@ -206,10 +205,9 @@ async function getContainers(config) {
     return enabled === null || enabled === 'true';
   });
 
-  // Inspect all containers in parallel to get env vars
-  const inspected = await Promise.all(filtered.map(c => inspectContainer(c.Id)));
+  const inspected = await Promise.all(filtered.map(c => inspectContainerWith(dockerClient, c.Id)));
 
-  const folderGroups = loadFolderViewGroups();
+  const folderGroups = useLocalFeatures ? loadFolderViewGroups() : {};
 
   const results = filtered.map((c, i) => {
     const info = inspected[i];
@@ -217,16 +215,10 @@ async function getContainers(config) {
     const rawName = c.Names?.[0]?.replace(/^\//, '') || c.Id.slice(0, 12);
     const name = labelVal(labels, 'name') || rawName;
     const port = labelVal(labels, 'port') || getFirstPort(c.Ports ? buildPortsMap(c.Ports) : null);
-    const hostIP = config.hostIP || 'localhost';
 
-    // Hostname priority (shared by both Tailscale and Cloudflare):
-    // 1. homepage.tailscale.hostname label (manual override)
-    // 2. Unraid Docker template XML (TailscaleHostname field)
-    // 3. TAILSCALE_HOSTNAME / TS_HOSTNAME / TS_EXTRA_ARGS env var
-    // 4. Container name as fallback
     const envVars = info?.Config?.Env || [];
     const tsHostname = labelVal(labels, 'tailscale.hostname')
-      || tsHostnameFromTemplate(rawName)
+      || (useLocalFeatures ? tsHostnameFromTemplate(rawName) : null)
       || tsHostnameFromEnv(envVars)
       || rawName;
 
@@ -234,29 +226,30 @@ async function getContainers(config) {
       (config.cloudflareDomain ? `https://${tsHostname}.${config.cloudflareDomain}` : null);
 
     const tsUrl = labelVal(labels, 'tailscale.url') ||
-      (config.tailnetDomain
-        ? `https://${tsHostname}.${config.tailnetDomain}`
-        : null);
+      (config.tailnetDomain ? `https://${tsHostname}.${config.tailnetDomain}` : null);
 
     const directUrl = labelVal(labels, 'direct.url') ||
       (port ? `http://${hostIP}:${port}` : null);
 
-    // A container has a web interface if it exposes a port OR has an explicit URL label.
-    // Auto-generated Tailscale/Cloudflare URLs don't count — every container gets those.
     const hasWebInterface = !!port
       || !!labelVal(labels, 'direct.url')
       || !!labelVal(labels, 'tailscale.url')
       || !!labelVal(labels, 'cloudflare.url');
+
+    let group = labelVal(labels, 'group');
+    if (!group && useLocalFeatures) {
+      group = folderGroups[rawName.toLowerCase()]
+        || folderGroups[(displayNameFromTemplate(rawName) || '').toLowerCase()]
+        || null;
+    }
+    group = group || 'Apps';
 
     return {
       id: c.Id,
       name,
       rawName,
       description: labelVal(labels, 'description') || '',
-      group: labelVal(labels, 'group')
-        || folderGroups[rawName.toLowerCase()]
-        || folderGroups[(displayNameFromTemplate(rawName) || '').toLowerCase()]
-        || 'Apps',
+      group,
       icon: resolveIcon(rawName, labels),
       status: c.State,
       cloudflareUrl: cfUrl,
@@ -269,7 +262,6 @@ async function getContainers(config) {
     };
   });
 
-  // Exclude containers with no web interface unless explicitly forced with homepage.enable=true
   const webResults = results
     .filter(r => r._forceShow || r._hasWebInterface)
     .map(({ _forceShow, _hasWebInterface, ...r }) => r);
@@ -280,7 +272,21 @@ async function getContainers(config) {
   });
 }
 
-// c.Ports from listContainers is an array, convert to HostConfig.PortBindings shape
+async function getRemoteContainers(server, config) {
+  const cached = remoteCache.get(server.name);
+  if (cached && Date.now() - cached.timestamp < REMOTE_CACHE_TTL) {
+    return { containers: cached.containers, cachedAt: cached.timestamp };
+  }
+  const client = createDockerClient(server);
+  const containers = await getContainers(config, {
+    dockerClient: client,
+    useLocalFeatures: false,
+    serverHostIP: server.hostIP || server.host,
+  });
+  remoteCache.set(server.name, { containers, timestamp: Date.now() });
+  return { containers, cachedAt: Date.now() };
+}
+
 function buildPortsMap(portsArray) {
   const map = {};
   for (const p of portsArray) {
@@ -293,16 +299,34 @@ function buildPortsMap(portsArray) {
   return map;
 }
 
+// ── API routes ──────────────────────────────────────────────────────────────
+
 app.get('/api/containers', async (req, res) => {
   const config = loadConfig();
-  const apps = await getContainers(config);
+
+  const localApps = await getContainers(config);
   const custom = (config.customApps || []).map(a => ({ ...a, id: `custom-${a.name}`, status: 'running' }));
-  res.json({ apps: [...apps, ...custom], config, version: VERSION });
+
+  const servers = [{
+    name: config.title || 'Unraid',
+    isLocal: true,
+    apps: [...localApps, ...custom],
+    cachedAt: null,
+  }];
+
+  await Promise.all((config.remoteServers || []).map(async server => {
+    try {
+      const { containers, cachedAt } = await getRemoteContainers(server, config);
+      servers.push({ name: server.name, isLocal: false, apps: containers, cachedAt });
+    } catch (e) {
+      servers.push({ name: server.name, isLocal: false, apps: [], cachedAt: null, error: e.message });
+    }
+  }));
+
+  res.json({ servers, config, version: VERSION });
 });
 
-app.get('/api/config', (req, res) => {
-  res.json(loadConfig());
-});
+app.get('/api/config', (req, res) => res.json(loadConfig()));
 
 app.post('/api/config', (req, res) => {
   const current = loadConfig();
@@ -323,7 +347,38 @@ app.post('/api/custom-apps', (req, res) => {
   res.json({ ok: true });
 });
 
-// Debug: shows FolderView config
+app.delete('/api/custom-apps/:name', (req, res) => {
+  const config = loadConfig();
+  config.customApps = (config.customApps || []).filter(a => a.name !== req.params.name);
+  saveConfig(config);
+  res.json({ ok: true });
+});
+
+app.post('/api/servers', (req, res) => {
+  const config = loadConfig();
+  const server = req.body;
+  if (!server.name || !server.host) return res.status(400).json({ error: 'name and host required' });
+  config.remoteServers = config.remoteServers || [];
+  const idx = config.remoteServers.findIndex(s => s.name === server.name);
+  if (idx >= 0) config.remoteServers[idx] = server;
+  else config.remoteServers.push(server);
+  saveConfig(config);
+  res.json({ ok: true });
+});
+
+app.delete('/api/servers/:name', (req, res) => {
+  const config = loadConfig();
+  config.remoteServers = (config.remoteServers || []).filter(s => s.name !== req.params.name);
+  remoteCache.delete(req.params.name);
+  saveConfig(config);
+  res.json({ ok: true });
+});
+
+app.post('/api/cache/clear', (req, res) => {
+  remoteCache.clear();
+  res.json({ ok: true });
+});
+
 app.get('/api/debug/folderview', (req, res) => {
   folderViewCache = null;
   const groups = loadFolderViewGroups();
@@ -333,7 +388,6 @@ app.get('/api/debug/folderview', (req, res) => {
   res.json({ dir, files, groups });
 });
 
-// Debug: shows raw env vars + template detection for a container by name
 app.get('/api/debug/:name', async (req, res) => {
   try {
     const list = await docker.listContainers({ all: false });
@@ -353,13 +407,6 @@ app.get('/api/debug/:name', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
-
-app.delete('/api/custom-apps/:name', (req, res) => {
-  const config = loadConfig();
-  config.customApps = (config.customApps || []).filter(a => a.name !== req.params.name);
-  saveConfig(config);
-  res.json({ ok: true });
 });
 
 const PORT = process.env.PORT || 7654;
