@@ -48,6 +48,10 @@ A self-hosted homelab dashboard that runs in Docker on Unraid. Automatically dis
 2. Click **Save**, then search for **undocked-launcher** in the Apps store
 3. Click **Install** and fill in the config fields — defaults are pre-filled
 
+> **Note:** The Docker image is hosted on GitHub Container Registry:
+> `ghcr.io/jasontucker/undocked-launcher:latest`
+> If installation fails with an "invalid reference format" error, do **not** paste the GitHub URL into the Repository field — that URL is only for registering the template. The image reference above is filled in automatically by the template.
+
 ---
 
 ### Option B — Clone with Git and Docker Compose
