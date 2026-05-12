@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.3.9';
+const VERSION = '1.4.0';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -146,13 +146,31 @@ function tsHostnameFromEnv(envArray) {
 // Read Tailscale hostname from Unraid's Docker template XML files.
 // Templates live at /boot/config/plugins/dockerMan/templates-user/<ContainerName>.xml
 const TEMPLATES_DIR = process.env.UNRAID_TEMPLATES_DIR || '/unraid-templates';
-function tsHostnameFromTemplate(containerName) {
+
+function readTemplateXml(containerName) {
   try {
     const filePath = path.join(TEMPLATES_DIR, `${containerName}.xml`);
     if (!fs.existsSync(filePath)) return null;
-    const xml = fs.readFileSync(filePath, 'utf8');
+    return fs.readFileSync(filePath, 'utf8');
+  } catch {
+    return null;
+  }
+}
 
-    // Only proceed if Tailscale is enabled in the template
+// Returns the Unraid display name (<Name> field) from the template XML.
+// FolderView Plus uses this name, not the Docker container name.
+function displayNameFromTemplate(containerName) {
+  const xml = readTemplateXml(containerName);
+  if (!xml) return null;
+  const m = xml.match(/<Name>([^<]+)<\/Name>/i);
+  return m ? m[1].trim() : null;
+}
+
+function tsHostnameFromTemplate(containerName) {
+  try {
+    const xml = readTemplateXml(containerName);
+    if (!xml) return null;
+
     const enabledMatch = xml.match(/<TailscaleEnabled[^>]*>([^<]+)<\/TailscaleEnabled>/i)
       || xml.match(/<Tailscale[^>]*>\s*<Enabled[^>]*>([^<]+)<\/Enabled>/i);
     if (enabledMatch && enabledMatch[1].trim().toLowerCase() !== 'true') return null;
@@ -235,7 +253,10 @@ async function getContainers(config) {
       name,
       rawName,
       description: labelVal(labels, 'description') || '',
-      group: labelVal(labels, 'group') || folderGroups[rawName.toLowerCase()] || 'Apps',
+      group: labelVal(labels, 'group')
+        || folderGroups[rawName.toLowerCase()]
+        || folderGroups[(displayNameFromTemplate(rawName) || '').toLowerCase()]
+        || 'Apps',
       icon: resolveIcon(rawName, labels),
       status: c.State,
       cloudflareUrl: cfUrl,
