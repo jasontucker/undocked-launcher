@@ -23,6 +23,7 @@ async function fetchApps() {
     config = data.config || {};
     document.getElementById('dashTitle').textContent = config.title || 'Homelab Dashboard';
     if (data.version) document.getElementById('versionBadge').textContent = `v${data.version}`;
+    applyDisplaySettings(config);
     renderApps(allApps);
   } catch (e) {
     console.error('Fetch error:', e);
@@ -136,11 +137,30 @@ document.getElementById('settingsBtn').addEventListener('click', openSettings);
 document.getElementById('openSettingsLink')?.addEventListener('click', e => { e.preventDefault(); openSettings(); });
 document.getElementById('refreshBtn').addEventListener('click', fetchApps);
 
+function applyDisplaySettings(cfg) {
+  const root = document.documentElement.style;
+  if (cfg.iconSize)    root.setProperty('--icon-size',    cfg.iconSize + 'px');
+  if (cfg.textSize)    root.setProperty('--text-size',    cfg.textSize + 'px');
+  if (cfg.buttonSize)  root.setProperty('--btn-size',     cfg.buttonSize + 'px');
+  if (cfg.desktopCols) root.setProperty('--desktop-cols', cfg.desktopCols);
+  if (cfg.mobileCols)  root.setProperty('--mobile-cols',  cfg.mobileCols);
+  if (cfg.viewportScale) {
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (vp) vp.content = `width=device-width, initial-scale=${cfg.viewportScale}`;
+  }
+}
+
 function openSettings() {
   document.getElementById('cfgTitle').value = config.title || '';
   document.getElementById('cfgHostIP').value = config.hostIP || '';
   document.getElementById('cfgCFDomain').value = config.cloudflareDomain || '';
   document.getElementById('cfgTailnetDomain').value = config.tailnetDomain || '';
+  document.getElementById('cfgIconSize').value = config.iconSize || 38;
+  document.getElementById('cfgTextSize').value = config.textSize || 13;
+  document.getElementById('cfgButtonSize').value = config.buttonSize || 30;
+  document.getElementById('cfgDesktopCols').value = config.desktopCols || 5;
+  document.getElementById('cfgMobileCols').value = config.mobileCols || 1;
+  document.getElementById('cfgViewportScale').value = config.viewportScale || 1.0;
   showModal('settingsModal');
 }
 
@@ -150,6 +170,12 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     hostIP: document.getElementById('cfgHostIP').value.trim(),
     cloudflareDomain: document.getElementById('cfgCFDomain').value.trim(),
     tailnetDomain: document.getElementById('cfgTailnetDomain').value.trim(),
+    iconSize: Number(document.getElementById('cfgIconSize').value) || 38,
+    textSize: Number(document.getElementById('cfgTextSize').value) || 13,
+    buttonSize: Number(document.getElementById('cfgButtonSize').value) || 30,
+    desktopCols: Number(document.getElementById('cfgDesktopCols').value) || 5,
+    mobileCols: Number(document.getElementById('cfgMobileCols').value) || 1,
+    viewportScale: Number(document.getElementById('cfgViewportScale').value) || 1.0,
   };
   await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   closeModal('settingsModal');

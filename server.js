@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.2.3';
+const VERSION = '1.2.4';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -11,10 +11,16 @@ const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const CONFIG_PATH = '/config/settings.json';
 const DEFAULT_CONFIG = {
   title: 'Undocked Launcher',
-  tailnetDomain: '',    // e.g. "my-tailnet.ts.net" — shared suffix for all containers
+  tailnetDomain: '',
   cloudflareDomain: '',
   hostIP: '',
   customApps: [],
+  iconSize: 38,
+  textSize: 13,
+  buttonSize: 30,
+  desktopCols: 5,
+  mobileCols: 1,
+  viewportScale: 1.0,
 };
 
 app.use(express.json());

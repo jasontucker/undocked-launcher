@@ -91,6 +91,33 @@
           (falls back to the container name if the label is absent)
         </p>
         <hr />
+        <h3>Display</h3>
+        <div class="form-group">
+          <label>Icon Size (px)</label>
+          <input type="number" id="cfgIconSize" min="20" max="80" placeholder="38" />
+        </div>
+        <div class="form-group">
+          <label>Text Size (px)</label>
+          <input type="number" id="cfgTextSize" min="10" max="24" placeholder="13" />
+        </div>
+        <div class="form-group">
+          <label>Button Size (px)</label>
+          <input type="number" id="cfgButtonSize" min="20" max="80" placeholder="30" />
+        </div>
+        <div class="form-group">
+          <label>Desktop Columns</label>
+          <input type="number" id="cfgDesktopCols" min="1" max="10" placeholder="5" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Columns</label>
+          <input type="number" id="cfgMobileCols" min="1" max="4" placeholder="1" />
+        </div>
+        <div class="form-group">
+          <label>Viewport Scale</label>
+          <input type="number" id="cfgViewportScale" min="0.5" max="2" step="0.1" placeholder="1.0" />
+          <small>Controls the initial zoom level (1.0 = default, 0.8 = zoomed out, 1.5 = zoomed in)</small>
+        </div>
+        <hr />
         <p class="help-text">
           Other per-container Docker labels:<br/>
           <code>homepage.name=Radarr</code><br/>
