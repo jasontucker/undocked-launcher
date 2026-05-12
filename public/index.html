@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" id="viewportMeta" />
   <title>Undocked Launcher</title>
+  <script>
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+  </script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -36,6 +39,9 @@
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
               </span>
+            </button>
+            <button class="button is-small" id="themeBtn" title="Toggle theme">
+              <span class="icon" id="themeIcon"></span>
             </button>
             <button class="button is-small" id="settingsBtn" title="Settings">
               <span class="icon">
@@ -152,18 +158,11 @@
           </div>
           <div class="column is-half">
             <div class="field">
-              <label class="label is-small">Desktop Columns</label>
+              <label class="label is-small">Min Card Width (px)</label>
               <div class="control">
-                <input class="input is-small" type="number" id="cfgDesktopCols" min="1" max="10" placeholder="5" />
+                <input class="input is-small" type="number" id="cfgMinCardWidth" min="160" max="600" placeholder="260" />
               </div>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="field">
-              <label class="label is-small">Mobile Columns</label>
-              <div class="control">
-                <input class="input is-small" type="number" id="cfgMobileCols" min="1" max="4" placeholder="1" />
-              </div>
+              <p class="help">Grid auto-fills columns based on this minimum</p>
             </div>
           </div>
           <div class="column is-half">

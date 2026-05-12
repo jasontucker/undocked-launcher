@@ -3,12 +3,26 @@ let config = {};
 
 // ── SVG Icons ──────────────────────────────────────────────────────────────
 const ICON_LINK = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
-
-const ICON_TS = `<svg class="btn-svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="3" r="2.2"/><circle cx="21" cy="12" r="2.2"/><circle cx="12" cy="21" r="2.2"/><circle cx="3" cy="12" r="2.2"/><circle cx="18.4" cy="5.6" r="2.2"/><circle cx="18.4" cy="18.4" r="2.2"/><circle cx="5.6" cy="18.4" r="2.2"/><circle cx="5.6" cy="5.6" r="2.2"/><circle cx="12" cy="12" r="2.2"/></svg>`;
-
-const ICON_CF = `<svg class="btn-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.2 10.6c-.1-.6-.5-1-.9-1.3-.5-.3-1-.4-1.6-.3l-.2.1c-.2-.6-.5-1.1-1-1.5-.6-.5-1.4-.8-2.2-.8-1.6 0-2.9 1.1-3.3 2.6h-.1c-1.5.1-2.7 1.4-2.7 2.9 0 1.6 1.3 2.9 2.9 2.9h8.2c1.1 0 2-.9 2-2 0-1-.7-1.9-1.6-2.3-.2-.1-.3-.2-.5-.3z"/></svg>`;
-
+const ICON_TS   = `<svg class="btn-svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="3" r="2.2"/><circle cx="21" cy="12" r="2.2"/><circle cx="12" cy="21" r="2.2"/><circle cx="3" cy="12" r="2.2"/><circle cx="18.4" cy="5.6" r="2.2"/><circle cx="18.4" cy="18.4" r="2.2"/><circle cx="5.6" cy="18.4" r="2.2"/><circle cx="5.6" cy="5.6" r="2.2"/><circle cx="12" cy="12" r="2.2"/></svg>`;
+const ICON_CF   = `<svg class="btn-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.2 10.6c-.1-.6-.5-1-.9-1.3-.5-.3-1-.4-1.6-.3l-.2.1c-.2-.6-.5-1.1-1-1.5-.6-.5-1.4-.8-2.2-.8-1.6 0-2.9 1.1-3.3 2.6h-.1c-1.5.1-2.7 1.4-2.7 2.9 0 1.6 1.3 2.9 2.9 2.9h8.2c1.1 0 2-.9 2-2 0-1-.7-1.9-1.6-2.3-.2-.1-.3-.2-.5-.3z"/></svg>`;
 const ICON_TRASH = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
+const ICON_SUN  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+const ICON_MOON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+
+// ── Theme toggle ────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeIcon').innerHTML = theme === 'dark' ? ICON_SUN : ICON_MOON;
+}
+
+applyTheme(localStorage.getItem('theme') || 'dark');
+
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
+});
 
 // ── Fetch & Render ──────────────────────────────────────────────────────────
 async function fetchApps() {
@@ -57,8 +71,8 @@ function renderApps(apps) {
 
   grid.innerHTML = sortedGroups.map(group => `
     <div class="group-label">${escHtml(group)}</div>
-    <div class="app-grid">
-      ${groups[group].map(renderCard).join('')}
+    <div class="grid">
+      ${groups[group].map(app => `<div class="cell">${renderCard(app)}</div>`).join('')}
     </div>
   `).join('');
 
@@ -134,11 +148,10 @@ document.getElementById('refreshBtn').addEventListener('click', fetchApps);
 
 function applyDisplaySettings(cfg) {
   const root = document.documentElement.style;
-  if (cfg.iconSize)    root.setProperty('--icon-size',    cfg.iconSize + 'px');
-  if (cfg.textSize)    root.setProperty('--text-size',    cfg.textSize + 'px');
-  if (cfg.buttonSize)  root.setProperty('--btn-size',     cfg.buttonSize + 'px');
-  if (cfg.desktopCols) root.setProperty('--desktop-cols', cfg.desktopCols);
-  if (cfg.mobileCols)  root.setProperty('--mobile-cols',  cfg.mobileCols);
+  if (cfg.iconSize)     root.setProperty('--icon-size',                   cfg.iconSize + 'px');
+  if (cfg.textSize)     root.setProperty('--text-size',                   cfg.textSize + 'px');
+  if (cfg.buttonSize)   root.setProperty('--btn-size',                    cfg.buttonSize + 'px');
+  if (cfg.minCardWidth) root.setProperty('--bulma-grid-min-cell-width',   cfg.minCardWidth + 'px');
   if (cfg.viewportScale) {
     const vp = document.getElementById('viewportMeta');
     if (vp) vp.content = `width=device-width, initial-scale=${cfg.viewportScale}`;
@@ -146,31 +159,29 @@ function applyDisplaySettings(cfg) {
 }
 
 function openSettings() {
-  document.getElementById('cfgTitle').value = config.title || '';
-  document.getElementById('cfgHostIP').value = config.hostIP || '';
-  document.getElementById('cfgCFDomain').value = config.cloudflareDomain || '';
+  document.getElementById('cfgTitle').value         = config.title || '';
+  document.getElementById('cfgHostIP').value        = config.hostIP || '';
+  document.getElementById('cfgCFDomain').value      = config.cloudflareDomain || '';
   document.getElementById('cfgTailnetDomain').value = config.tailnetDomain || '';
-  document.getElementById('cfgIconSize').value = config.iconSize || 38;
-  document.getElementById('cfgTextSize').value = config.textSize || 13;
-  document.getElementById('cfgButtonSize').value = config.buttonSize || 30;
-  document.getElementById('cfgDesktopCols').value = config.desktopCols || 5;
-  document.getElementById('cfgMobileCols').value = config.mobileCols || 1;
+  document.getElementById('cfgIconSize').value      = config.iconSize || 38;
+  document.getElementById('cfgTextSize').value      = config.textSize || 13;
+  document.getElementById('cfgButtonSize').value    = config.buttonSize || 30;
+  document.getElementById('cfgMinCardWidth').value  = config.minCardWidth || 260;
   document.getElementById('cfgViewportScale').value = config.viewportScale || 1.0;
   showModal('settingsModal');
 }
 
 document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
   const payload = {
-    title: document.getElementById('cfgTitle').value.trim() || 'Homelab Dashboard',
-    hostIP: document.getElementById('cfgHostIP').value.trim(),
+    title:           document.getElementById('cfgTitle').value.trim() || 'Homelab Dashboard',
+    hostIP:          document.getElementById('cfgHostIP').value.trim(),
     cloudflareDomain: document.getElementById('cfgCFDomain').value.trim(),
-    tailnetDomain: document.getElementById('cfgTailnetDomain').value.trim(),
-    iconSize: Number(document.getElementById('cfgIconSize').value) || 38,
-    textSize: Number(document.getElementById('cfgTextSize').value) || 13,
-    buttonSize: Number(document.getElementById('cfgButtonSize').value) || 30,
-    desktopCols: Number(document.getElementById('cfgDesktopCols').value) || 5,
-    mobileCols: Number(document.getElementById('cfgMobileCols').value) || 1,
-    viewportScale: Number(document.getElementById('cfgViewportScale').value) || 1.0,
+    tailnetDomain:   document.getElementById('cfgTailnetDomain').value.trim(),
+    iconSize:        Number(document.getElementById('cfgIconSize').value) || 38,
+    textSize:        Number(document.getElementById('cfgTextSize').value) || 13,
+    buttonSize:      Number(document.getElementById('cfgButtonSize').value) || 30,
+    minCardWidth:    Number(document.getElementById('cfgMinCardWidth').value) || 260,
+    viewportScale:   Number(document.getElementById('cfgViewportScale').value) || 1.0,
   };
   await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   closeModal('settingsModal');
@@ -190,12 +201,12 @@ document.getElementById('saveCustomAppBtn').addEventListener('click', async () =
   const payload = {
     name,
     description: document.getElementById('customDesc').value.trim(),
-    group: document.getElementById('customGroup').value.trim() || 'Apps',
-    icon: document.getElementById('customIcon').value.trim() ||
+    group:       document.getElementById('customGroup').value.trim() || 'Apps',
+    icon:        document.getElementById('customIcon').value.trim() ||
       `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${name.toLowerCase().replace(/\s+/g,'-')}.png`,
     cloudflareUrl: document.getElementById('customCFUrl').value.trim() || null,
-    tailscaleUrl: document.getElementById('customTSUrl').value.trim() || null,
-    directUrl: document.getElementById('customDirectUrl').value.trim() || null,
+    tailscaleUrl:  document.getElementById('customTSUrl').value.trim() || null,
+    directUrl:     document.getElementById('customDirectUrl').value.trim() || null,
   };
   await fetch('/api/custom-apps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   closeModal('addAppModal');

@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.3.0';
+const VERSION = '1.3.1';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -18,8 +18,7 @@ const DEFAULT_CONFIG = {
   iconSize: 38,
   textSize: 13,
   buttonSize: 30,
-  desktopCols: 5,
-  mobileCols: 1,
+  minCardWidth: 260,
   viewportScale: 1.0,
 };
 
