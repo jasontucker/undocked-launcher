@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.5.4';
+const VERSION = '1.5.5';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -285,10 +285,9 @@ async function getContainers(config, opts = {}) {
     };
   });
 
-  // Remote servers show all running containers — no template data to determine web interface
-  const webResults = useLocalFeatures
-    ? results.filter(r => r._forceShow || r._hasWebInterface).map(({ _forceShow, _hasWebInterface, ...r }) => r)
-    : results.map(({ _forceShow, _hasWebInterface, ...r }) => r);
+  const webResults = results
+    .filter(r => r._forceShow || r._hasWebInterface)
+    .map(({ _forceShow, _hasWebInterface, ...r }) => r);
 
   return webResults.sort((a, b) => {
     if (a.group !== b.group) return a.group.localeCompare(b.group);
