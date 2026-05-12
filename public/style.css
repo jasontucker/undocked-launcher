@@ -11,11 +11,64 @@
   --danger: #ef4444;
 }
 
+/* ── Navbar ── */
+.navbar {
+  padding: 0 !important;
+}
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  width: 100%;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.nav-search {
+  flex: 1;
+  max-width: 280px;
+}
+
+.nav-actions .buttons { margin-bottom: 0; }
+
+@media (max-width: 768px) {
+  .nav-row {
+    flex-wrap: wrap;
+    padding: 10px 14px 8px;
+    gap: 6px 10px;
+  }
+
+  /* Row 1: brand left, actions right */
+  .nav-brand  { order: 1; flex: 1; }
+  .nav-actions { order: 2; flex-shrink: 0; }
+
+  /* Row 2: search full width */
+  .nav-search {
+    order: 3;
+    flex: 0 0 100%;
+    max-width: none;
+  }
+}
+
 /* ── Layout ── */
 .main-content {
-  padding-top: 4.5rem;
+  padding-top: 4rem;
   max-width: 1600px;
   margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding-top: 7rem; /* two-row header: brand row + search row */
+  }
 }
 
 /* ── Group label ── */
