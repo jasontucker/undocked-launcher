@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.5.2';
+const VERSION = '1.5.3';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -105,6 +105,18 @@ function resolveIcon(name, labels) {
   if (unraidIcon) return unraidIcon;
   const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   return `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${normalized}.png`;
+}
+
+// Resolve net.unraid.docker.webui / CasaOS webui templates like http://[IP]:[PORT:11080]/
+function resolveWebUI(webuiTemplate, hostIP, portsMap) {
+  if (!webuiTemplate) return null;
+  let url = webuiTemplate.replace(/^'|'$/g, '');
+  url = url.replace(/\[IP\]/g, hostIP || 'localhost');
+  url = url.replace(/\[PORT:(\d+)\]/g, (_, defaultPort) => {
+    const mapped = portsMap?.[`${defaultPort}/tcp`]?.[0]?.HostPort;
+    return mapped || defaultPort;
+  });
+  return url.startsWith('http') ? url : null;
 }
 
 function tsHostnameFromEnv(envArray) {
@@ -217,8 +229,12 @@ async function getContainers(config, opts = {}) {
     const info = inspected[i];
     const labels = c.Labels || {};
     const rawName = c.Names?.[0]?.replace(/^\//, '') || c.Id.slice(0, 12);
-    const name = labelVal(labels, 'name') || rawName;
-    const port = labelVal(labels, 'port') || getFirstPort(c.Ports ? buildPortsMap(c.Ports) : null);
+    const name = labelVal(labels, 'name')
+      || labels['org.opencontainers.image.title']
+      || rawName;
+    const portsMap = c.Ports ? buildPortsMap(c.Ports) : null;
+    const port = labelVal(labels, 'port') || getFirstPort(portsMap);
+    const webuiUrl = resolveWebUI(labels['net.unraid.docker.webui'], hostIP, portsMap);
 
     const envVars = info?.Config?.Env || [];
     const tsHostname = labelVal(labels, 'tailscale.hostname')
@@ -233,9 +249,10 @@ async function getContainers(config, opts = {}) {
       (config.tailnetDomain ? `https://${tsHostname}.${config.tailnetDomain}` : null);
 
     const directUrl = labelVal(labels, 'direct.url') ||
-      (port ? `http://${hostIP}:${port}` : null);
+      (port ? `http://${hostIP}:${port}` : null) ||
+      webuiUrl;
 
-    const hasWebInterface = !!port
+    const hasWebInterface = !!port || !!webuiUrl
       || !!labelVal(labels, 'direct.url')
       || !!labelVal(labels, 'tailscale.url')
       || !!labelVal(labels, 'cloudflare.url');
@@ -246,13 +263,15 @@ async function getContainers(config, opts = {}) {
         || folderGroups[(displayNameFromTemplate(rawName) || '').toLowerCase()]
         || null;
     }
-    group = group || 'Apps';
+    group = group || labels['com.docker.compose.project'] || 'Apps';
 
     return {
       id: c.Id,
       name,
       rawName,
-      description: labelVal(labels, 'description') || '',
+      description: labelVal(labels, 'description')
+        || labels['org.opencontainers.image.description']
+        || '',
       group,
       icon: resolveIcon(rawName, labels),
       status: c.State,
