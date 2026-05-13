@@ -170,49 +170,79 @@
   flex-shrink: 0;
 }
 
-.action-btn {
-  width: var(--btn-size, 30px);
-  height: var(--btn-size, 30px);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  border: 1.5px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, transform 0.1s;
-  flex-shrink: 0;
-  padding: 0;
-}
-.action-btn:not(.disabled):hover { transform: scale(1.12); }
-
 .btn-svg { width: 16px; height: 16px; display: block; }
-
-.action-btn.disabled {
-  opacity: 0.2;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.btn-direct { color: var(--direct-color); border-color: rgba(16,185,129,0.25); }
-.btn-direct:not(.disabled):hover { border-color: var(--direct-color); background: rgba(16,185,129,0.1); }
-
-.btn-ts { color: var(--ts-color); border-color: rgba(99,102,241,0.25); }
-.btn-ts:not(.disabled):hover { border-color: var(--ts-color); background: rgba(99,102,241,0.1); }
-
-.btn-cf { color: var(--cf-color); border-color: rgba(246,130,31,0.25); }
-.btn-cf:not(.disabled):hover { border-color: var(--cf-color); background: rgba(246,130,31,0.12); }
 
 .btn-delete {
   color: var(--danger);
   border: none;
   background: transparent;
   opacity: 0;
+  cursor: pointer;
+  padding: 4px;
   transition: opacity 0.15s, transform 0.1s;
 }
 .app-card:hover .btn-delete { opacity: 0.6; }
 .btn-delete:hover { opacity: 1 !important; transform: scale(1.12); }
+
+/* ── URL Dropdown ── */
+.url-dropdown { position: relative; }
+
+.url-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  height: var(--btn-size, 30px);
+  border-radius: 8px;
+  border: 1.5px solid rgba(127,127,127,0.2);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.url-dropdown-btn:hover,
+.url-dropdown.is-open .url-dropdown-btn {
+  border-color: rgba(127,127,127,0.45);
+  background: rgba(127,127,127,0.08);
+}
+
+.url-dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 140px;
+  border-radius: 10px;
+  border: 1px solid rgba(127,127,127,0.2);
+  background-color: hsl(var(--bulma-box-background-color));
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  overflow: hidden;
+  z-index: 200;
+}
+.url-dropdown.is-open .url-dropdown-menu { display: block; }
+
+.url-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  font-size: 0.82rem;
+  text-decoration: none;
+  color: inherit;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+.url-option:hover { background: rgba(127,127,127,0.1); }
+
+.url-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.url-direct .url-dot { background: var(--direct-color); }
+.url-ts     .url-dot { background: var(--ts-color); }
+.url-cf     .url-dot { background: var(--cf-color); }
 
 /* ── Server headers ── */
 .server-header {
@@ -296,13 +326,12 @@
   .card-name { font-size: 1.05rem; font-weight: 700; }
   .card-desc { font-size: 0.875rem; margin-top: 4px; }
 
-  /* Tap-friendly action buttons (Apple HIG: 44pt minimum) */
-  .card-actions { gap: 8px; }
-  .action-btn {
-    width: 60px;
-    height: 48px;
+  /* Larger tap target for dropdown button */
+  .url-dropdown-btn {
+    height: 44px;
+    padding: 0 14px;
     border-radius: 12px;
     border-width: 2px;
   }
-  .btn-svg { width: 24px; height: 24px; }
+  .btn-svg { width: 20px; height: 20px; }
 }

@@ -3,9 +3,8 @@ let allApps = [];
 let config = {};
 
 // ── SVG Icons ──────────────────────────────────────────────────────────────
-const ICON_LINK = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
-const ICON_TS   = `<svg class="btn-svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="3" r="2.2"/><circle cx="21" cy="12" r="2.2"/><circle cx="12" cy="21" r="2.2"/><circle cx="3" cy="12" r="2.2"/><circle cx="18.4" cy="5.6" r="2.2"/><circle cx="18.4" cy="18.4" r="2.2"/><circle cx="5.6" cy="18.4" r="2.2"/><circle cx="5.6" cy="5.6" r="2.2"/><circle cx="12" cy="12" r="2.2"/></svg>`;
-const ICON_CF   = `<svg class="btn-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.2 10.6c-.1-.6-.5-1-.9-1.3-.5-.3-1-.4-1.6-.3l-.2.1c-.2-.6-.5-1.1-1-1.5-.6-.5-1.4-.8-2.2-.8-1.6 0-2.9 1.1-3.3 2.6h-.1c-1.5.1-2.7 1.4-2.7 2.9 0 1.6 1.3 2.9 2.9 2.9h8.2c1.1 0 2-.9 2-2 0-1-.7-1.9-1.6-2.3-.2-.1-.3-.2-.5-.3z"/></svg>`;
+const ICON_OPEN    = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+const ICON_CHEVRON = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
 const ICON_TRASH = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
 const ICON_SUN  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
 const ICON_MOON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
@@ -127,6 +126,20 @@ function renderApps(servers, searchQuery = '') {
       fetchApps();
     });
   });
+
+  grid.querySelectorAll('.url-dropdown-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const dropdown = btn.closest('.url-dropdown');
+      const isOpen = dropdown.classList.contains('is-open');
+      closeAllDropdowns();
+      if (!isOpen) dropdown.classList.add('is-open');
+    });
+  });
+
+  grid.querySelectorAll('.url-option').forEach(link => {
+    link.addEventListener('click', () => closeAllDropdowns());
+  });
 }
 
 function renderCard(app) {
@@ -139,20 +152,21 @@ function renderCard(app) {
       <div class="app-icon-fallback" style="display:none">${escHtml(app.name.slice(0,2))}</div>
     </div>`;
 
-  const directBtn = app.directUrl
-    ? `<a class="action-btn btn-direct" href="${escHtml(app.directUrl)}" target="_blank" rel="noopener" title="Direct — ${escHtml(app.directUrl)}">${ICON_LINK}</a>`
-    : `<span class="action-btn btn-direct disabled" title="No port exposed">${ICON_LINK}</span>`;
-
-  const tsBtn = app.tailscaleUrl
-    ? `<a class="action-btn btn-ts" href="${escHtml(app.tailscaleUrl)}" target="_blank" rel="noopener" title="Tailscale — ${escHtml(app.tailscaleUrl)}">${ICON_TS}</a>`
-    : `<span class="action-btn btn-ts disabled" title="Tailscale not configured">${ICON_TS}</span>`;
-
-  const cfBtn = app.cloudflareUrl
-    ? `<a class="action-btn btn-cf" href="${escHtml(app.cloudflareUrl)}" target="_blank" rel="noopener" title="Cloudflare — ${escHtml(app.cloudflareUrl)}">${ICON_CF}</a>`
-    : `<span class="action-btn btn-cf disabled" title="Cloudflare not configured">${ICON_CF}</span>`;
+  const options = [
+    app.directUrl    && `<a class="url-option url-direct" href="${escHtml(app.directUrl)}" target="_blank" rel="noopener"><span class="url-dot"></span>Direct</a>`,
+    app.tailscaleUrl && `<a class="url-option url-ts"     href="${escHtml(app.tailscaleUrl)}" target="_blank" rel="noopener"><span class="url-dot"></span>Tailscale</a>`,
+    app.cloudflareUrl && `<a class="url-option url-cf"    href="${escHtml(app.cloudflareUrl)}" target="_blank" rel="noopener"><span class="url-dot"></span>Cloudflare</a>`,
+  ].filter(Boolean).join('');
 
   const deleteBtn = isCustom
     ? `<button class="action-btn btn-delete" data-delete="${escHtml(app.name)}" title="Remove">${ICON_TRASH}</button>`
+    : '';
+
+  const dropdown = options
+    ? `<div class="url-dropdown">
+        <button class="url-dropdown-btn" title="Open">${ICON_OPEN}${ICON_CHEVRON}</button>
+        <div class="url-dropdown-menu">${options}</div>
+       </div>`
     : '';
 
   return `
@@ -162,9 +176,7 @@ function renderCard(app) {
         <div class="card-info">
           <div class="card-name">${escHtml(app.name)}</div>
         </div>
-        <div class="card-actions">
-          ${directBtn}${tsBtn}${cfBtn}${deleteBtn}
-        </div>
+        <div class="card-actions">${dropdown}${deleteBtn}</div>
       </div>
       ${app.description ? `<div class="card-desc">${escHtml(app.description)}</div>` : ''}
     </div>`;
@@ -337,6 +349,12 @@ document.getElementById('saveCustomAppBtn').addEventListener('click', async () =
   closeModal('addAppModal');
   fetchApps();
 });
+
+// ── Dropdown helpers ─────────────────────────────────────────────────────────
+function closeAllDropdowns() {
+  document.querySelectorAll('.url-dropdown.is-open').forEach(d => d.classList.remove('is-open'));
+}
+document.addEventListener('click', closeAllDropdowns);
 
 // ── Modal helpers ────────────────────────────────────────────────────────────
 function showModal(id) { document.getElementById(id).classList.add('is-active'); }
