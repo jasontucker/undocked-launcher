@@ -418,6 +418,7 @@ app.post('/api/icon-override', (req, res) => {
   config.iconOverrides = config.iconOverrides || {};
   config.iconOverrides[containerName] = iconUrl;
   saveConfig(config);
+  remoteCache.clear(); // ensure remote containers reflect the new override immediately
   res.json({ ok: true });
 });
 
@@ -425,6 +426,7 @@ app.delete('/api/icon-override/:name', (req, res) => {
   const config = loadConfig();
   delete (config.iconOverrides || {})[req.params.name];
   saveConfig(config);
+  remoteCache.clear();
   res.json({ ok: true });
 });
 

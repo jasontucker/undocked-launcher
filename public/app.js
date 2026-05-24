@@ -444,15 +444,23 @@ function renderIconGrid(query) {
       const url  = `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${name}.png`;
       if (iconPickerTargetField) {
         document.getElementById(iconPickerTargetField).value = url;
+        closeModal('iconPickerModal');
       } else if (iconPickerTargetContainer) {
-        await fetch('/api/icon-override', {
+        closeModal('iconPickerModal');
+        // Optimistically update the card icon immediately in the DOM
+        document.querySelectorAll(`[data-container="${CSS.escape(iconPickerTargetContainer)}"]`).forEach(btn => {
+          const img = btn.closest('.app-card')?.querySelector('.app-icon');
+          if (img) { img.style.display = ''; img.src = url; }
+          const fallback = btn.closest('.app-card')?.querySelector('.app-icon-fallback');
+          if (fallback) fallback.style.display = 'none';
+        });
+        const res = await fetch('/api/icon-override', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ containerName: iconPickerTargetContainer, iconUrl: url }),
         });
-        fetchApps();
+        if (res.ok) fetchApps();
       }
-      closeModal('iconPickerModal');
     });
   });
 }
