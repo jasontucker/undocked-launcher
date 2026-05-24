@@ -237,8 +237,9 @@
         </div>
         <div class="field">
           <label class="label is-small">Icon URL</label>
-          <div class="control">
-            <input class="input is-small" type="text" id="customIcon" placeholder="https://example.com/icon.png" />
+          <div class="control has-addons" style="display:flex;gap:6px">
+            <input class="input is-small" type="text" id="customIcon" placeholder="https://example.com/icon.png" style="flex:1" />
+            <button class="button is-small" id="browseIconBtn" type="button">Browse</button>
           </div>
         </div>
         <div class="field">
@@ -347,6 +348,26 @@
     </div>
   </div>
 
+  <!-- Icon Picker Modal -->
+  <div class="modal" id="iconPickerModal">
+    <div class="modal-background" data-close="iconPickerModal"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Choose Icon</p>
+        <button class="delete" aria-label="close" data-close="iconPickerModal"></button>
+      </header>
+      <section class="modal-card-body">
+        <input class="input is-small mb-3" type="search" id="iconSearch" placeholder="Search icons… e.g. plex, sonarr, nginx" autocomplete="off" />
+        <div id="iconGrid" class="icon-picker-grid"></div>
+        <p id="iconGridHint" class="has-text-grey is-size-7 mt-2">Type to search — showing top 48 results</p>
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end">
+        <button class="button" data-close="iconPickerModal">Cancel</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="icons.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

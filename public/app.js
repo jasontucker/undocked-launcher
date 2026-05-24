@@ -5,6 +5,7 @@ let config = {};
 // ── SVG Icons ──────────────────────────────────────────────────────────────
 const ICON_OPEN    = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
 const ICON_CHEVRON = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+const ICON_EDIT    = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const ICON_TRASH = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
 const ICON_SUN  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
 const ICON_MOON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
@@ -127,6 +128,25 @@ function renderApps(servers, searchQuery = '') {
     });
   });
 
+  // Edit custom app
+  grid.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const name = btn.dataset.edit;
+      const app = allApps.find(a => a.name === name);
+      if (!app) return;
+      openCustomAppModal(app);
+    });
+  });
+
+  // Override icon on Docker container
+  grid.querySelectorAll('[data-container]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openIconPicker(null, btn.dataset.container);
+    });
+  });
+
   grid.querySelectorAll('.url-dropdown-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -158,6 +178,10 @@ function renderCard(app) {
     app.cloudflareUrl && `<a class="url-option url-cf"    href="${escHtml(app.cloudflareUrl)}" target="_blank" rel="noopener"><span class="url-dot"></span>Cloudflare</a>`,
   ].filter(Boolean).join('');
 
+  const editBtn = isCustom
+    ? `<button class="action-btn btn-edit-app" data-edit="${escHtml(app.name)}" title="Edit">${ICON_EDIT}</button>`
+    : `<button class="action-btn btn-edit-icon" data-container="${escHtml(app.rawName)}" data-icon="${escHtml(app.icon)}" title="Change icon">${ICON_EDIT}</button>`;
+
   const deleteBtn = isCustom
     ? `<button class="action-btn btn-delete" data-delete="${escHtml(app.name)}" title="Remove">${ICON_TRASH}</button>`
     : '';
@@ -176,7 +200,7 @@ function renderCard(app) {
         <div class="card-info">
           <div class="card-name">${escHtml(app.name)}</div>
         </div>
-        <div class="card-actions">${dropdown}${deleteBtn}</div>
+        <div class="card-actions">${dropdown}${editBtn}${deleteBtn}</div>
       </div>
       ${app.description ? `<div class="card-desc">${escHtml(app.description)}</div>` : ''}
     </div>`;
@@ -325,29 +349,114 @@ document.getElementById('clearCacheBtn').addEventListener('click', async () => {
   fetchApps();
 });
 
-// ── Add Custom App ──────────────────────────────────────────────────────────
-document.getElementById('addAppBtn').addEventListener('click', () => {
-  ['customName','customDesc','customGroup','customIcon','customCFUrl','customTSUrl','customDirectUrl']
-    .forEach(id => { document.getElementById(id).value = ''; });
+// ── Add / Edit Custom App ────────────────────────────────────────────────────
+let editingAppName = null; // null = adding new, string = editing existing
+
+function openCustomAppModal(app = null) {
+  editingAppName = app ? app.name : null;
+  document.getElementById('customName').value       = app?.name || '';
+  document.getElementById('customDesc').value       = app?.description || '';
+  document.getElementById('customGroup').value      = app?.group || '';
+  document.getElementById('customIcon').value       = app?.icon || '';
+  document.getElementById('customCFUrl').value      = app?.cloudflareUrl || '';
+  document.getElementById('customTSUrl').value      = app?.tailscaleUrl || '';
+  document.getElementById('customDirectUrl').value  = app?.directUrl || '';
+  document.querySelector('#addAppModal .modal-card-title').textContent =
+    app ? 'Edit Custom App' : 'Add Custom App';
+  document.getElementById('saveCustomAppBtn').textContent =
+    app ? 'Save Changes' : 'Add App';
   showModal('addAppModal');
-});
+}
+
+document.getElementById('addAppBtn').addEventListener('click', () => openCustomAppModal());
 
 document.getElementById('saveCustomAppBtn').addEventListener('click', async () => {
   const name = document.getElementById('customName').value.trim();
   if (!name) { alert('Name is required.'); return; }
   const payload = {
     name,
-    description: document.getElementById('customDesc').value.trim(),
-    group:       document.getElementById('customGroup').value.trim() || 'Apps',
-    icon:        document.getElementById('customIcon').value.trim() ||
+    description:   document.getElementById('customDesc').value.trim(),
+    group:         document.getElementById('customGroup').value.trim() || 'Apps',
+    icon:          document.getElementById('customIcon').value.trim() ||
       `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${name.toLowerCase().replace(/\s+/g,'-')}.png`,
     cloudflareUrl: document.getElementById('customCFUrl').value.trim() || null,
     tailscaleUrl:  document.getElementById('customTSUrl').value.trim() || null,
     directUrl:     document.getElementById('customDirectUrl').value.trim() || null,
   };
+  // If renaming, delete old entry first
+  if (editingAppName && editingAppName !== name) {
+    await fetch(`/api/custom-apps/${encodeURIComponent(editingAppName)}`, { method: 'DELETE' });
+  }
   await fetch('/api/custom-apps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   closeModal('addAppModal');
   fetchApps();
+});
+
+document.getElementById('browseIconBtn').addEventListener('click', () => {
+  openIconPicker('customIcon', null);
+});
+
+// ── Icon Picker ──────────────────────────────────────────────────────────────
+let iconPickerTargetField = null;   // input field id to fill, or null
+let iconPickerTargetContainer = null; // container rawName for override, or null
+
+function openIconPicker(fieldId, containerName) {
+  iconPickerTargetField     = fieldId;
+  iconPickerTargetContainer = containerName;
+  document.getElementById('iconSearch').value = '';
+  renderIconGrid('');
+  showModal('iconPickerModal');
+}
+
+function renderIconGrid(query) {
+  const grid = document.getElementById('iconGrid');
+  const hint = document.getElementById('iconGridHint');
+  const q = query.toLowerCase().trim();
+  const filtered = q
+    ? DASHBOARD_ICONS.filter(n => n.includes(q))
+    : DASHBOARD_ICONS;
+  const shown = filtered.slice(0, 48);
+
+  if (!shown.length) {
+    grid.innerHTML = '<p class="has-text-grey is-size-7">No icons found.</p>';
+    hint.textContent = '';
+    return;
+  }
+
+  grid.innerHTML = shown.map(name => `
+    <div class="icon-pick-item" data-icon-name="${escHtml(name)}" title="${escHtml(name)}">
+      <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${escHtml(name)}.png"
+           alt="${escHtml(name)}" loading="lazy"
+           onerror="this.parentElement.style.opacity='0.3'">
+      <span>${escHtml(name)}</span>
+    </div>
+  `).join('');
+
+  hint.textContent = filtered.length > 48
+    ? `Showing 48 of ${filtered.length} results — type more to narrow down`
+    : `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`;
+
+  grid.querySelectorAll('.icon-pick-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const name = item.dataset.iconName;
+      const url  = `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${name}.png`;
+      if (iconPickerTargetField) {
+        document.getElementById(iconPickerTargetField).value = url;
+      } else if (iconPickerTargetContainer) {
+        await fetch('/api/icon-override', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ containerName: iconPickerTargetContainer, iconUrl: url }),
+        });
+        fetchApps();
+      }
+      closeModal('iconPickerModal');
+    });
+  });
+}
+
+document.getElementById('iconSearch').addEventListener('input', e => {
+  renderIconGrid(e.target.value);
 });
 
 // ── Dropdown helpers ─────────────────────────────────────────────────────────

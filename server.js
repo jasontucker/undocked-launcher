@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.5.6';
+const VERSION = '1.6.0';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -15,6 +15,7 @@ const DEFAULT_CONFIG = {
   cloudflareDomain: '',
   hostIP: '',
   customApps: [],
+  iconOverrides: {},
   iconSize: 38,
   textSize: 13,
   buttonSize: 30,
@@ -286,7 +287,7 @@ async function getContainers(config, opts = {}) {
         || stripMarkdown(labels['org.opencontainers.image.description'])
         || '',
       group,
-      icon: resolveIcon(rawName, labels),
+      icon: config.iconOverrides?.[rawName] || resolveIcon(rawName, labels),
       status: c.State,
       cloudflareUrl: cfUrl,
       tailscaleUrl: tsUrl,
@@ -406,6 +407,23 @@ app.delete('/api/servers/:name', (req, res) => {
   const config = loadConfig();
   config.remoteServers = (config.remoteServers || []).filter(s => s.name !== req.params.name);
   remoteCache.delete(req.params.name);
+  saveConfig(config);
+  res.json({ ok: true });
+});
+
+app.post('/api/icon-override', (req, res) => {
+  const { containerName, iconUrl } = req.body;
+  if (!containerName || !iconUrl) return res.status(400).json({ error: 'containerName and iconUrl required' });
+  const config = loadConfig();
+  config.iconOverrides = config.iconOverrides || {};
+  config.iconOverrides[containerName] = iconUrl;
+  saveConfig(config);
+  res.json({ ok: true });
+});
+
+app.delete('/api/icon-override/:name', (req, res) => {
+  const config = loadConfig();
+  delete (config.iconOverrides || {})[req.params.name];
   saveConfig(config);
   res.json({ ok: true });
 });
