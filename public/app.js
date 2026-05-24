@@ -143,7 +143,7 @@ function renderApps(servers, searchQuery = '') {
   grid.querySelectorAll('[data-container]').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      openIconPicker(null, btn.dataset.container);
+      openIconPicker(null, btn.dataset.container, btn.dataset.container);
     });
   });
 
@@ -393,18 +393,20 @@ document.getElementById('saveCustomAppBtn').addEventListener('click', async () =
 });
 
 document.getElementById('browseIconBtn').addEventListener('click', () => {
-  openIconPicker('customIcon', null);
+  const appName = document.getElementById('customName').value.trim();
+  openIconPicker('customIcon', null, appName);
 });
 
 // ── Icon Picker ──────────────────────────────────────────────────────────────
 let iconPickerTargetField = null;   // input field id to fill, or null
 let iconPickerTargetContainer = null; // container rawName for override, or null
 
-function openIconPicker(fieldId, containerName) {
+function openIconPicker(fieldId, containerName, appName) {
   iconPickerTargetField     = fieldId;
   iconPickerTargetContainer = containerName;
-  document.getElementById('iconSearch').value = '';
-  renderIconGrid('');
+  const defaultQuery = appName ? appName.trim().split(/[\s_\-]+/)[0].toLowerCase() : '';
+  document.getElementById('iconSearch').value = defaultQuery;
+  renderIconGrid(defaultQuery);
   showModal('iconPickerModal');
 }
 
