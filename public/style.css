@@ -300,6 +300,36 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Group Order drag list ── */
+.group-order-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(127,127,127,0.18);
+  margin-bottom: 4px;
+  cursor: grab;
+  user-select: none;
+  background: rgba(127,127,127,0.04);
+  transition: background 0.12s, border-color 0.12s;
+}
+.group-order-item:hover {
+  background: rgba(127,127,127,0.1);
+  border-color: rgba(127,127,127,0.35);
+}
+.group-order-item.drag-over {
+  border-color: hsl(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l));
+  background: rgba(127,127,127,0.12);
+}
+.group-order-item.dragging {
+  opacity: 0.4;
+}
+.drag-handle {
+  opacity: 0.35;
+  flex-shrink: 0;
+}
+
 /* ── Icon Picker ── */
 .icon-picker-grid {
   display: grid;

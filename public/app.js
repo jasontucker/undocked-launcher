@@ -251,6 +251,7 @@ function openSettings() {
   document.getElementById('cfgMinCardWidth').value  = config.minCardWidth || 260;
   document.getElementById('cfgViewportScale').value = config.viewportScale || 1.0;
   renderServerList();
+  renderGroupOrderList();
   showModal('settingsModal');
 }
 
@@ -265,6 +266,7 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     buttonSize:       Number(document.getElementById('cfgButtonSize').value) || 30,
     minCardWidth:     Number(document.getElementById('cfgMinCardWidth').value) || 260,
     viewportScale:    Number(document.getElementById('cfgViewportScale').value) || 1.0,
+    groupOrder:       getGroupOrderFromList(),
   };
   const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   const data = await res.json();
@@ -301,6 +303,74 @@ function renderServerList() {
       fetchApps();
     });
   });
+}
+
+// ── Group Order drag-and-drop ────────────────────────────────────────────────
+function renderGroupOrderList() {
+  const el = document.getElementById('groupOrderList');
+
+  // Collect all unique group names from current data
+  const allGroups = [...new Set(allServers.flatMap(s => (s.apps || []).map(a => a.group).filter(Boolean)))];
+  if (!allGroups.length) {
+    el.innerHTML = '<p class="has-text-grey is-size-7">No groups found.</p>';
+    return;
+  }
+
+  // Merge: saved order first, then any new groups not yet in the list
+  const saved = config.groupOrder || [];
+  const ordered = [...saved.filter(g => allGroups.includes(g)),
+                   ...allGroups.filter(g => !saved.includes(g)).sort()];
+
+  el.innerHTML = ordered.map(g => `
+    <div class="group-order-item" draggable="true" data-group="${escHtml(g)}">
+      <svg class="drag-handle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="5" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="9" cy="19" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="15" cy="5" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="15" cy="19" r="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+      <span>${escHtml(g)}</span>
+    </div>
+  `).join('');
+
+  let dragSrc = null;
+
+  el.querySelectorAll('.group-order-item').forEach(item => {
+    item.addEventListener('dragstart', () => {
+      dragSrc = item;
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      el.querySelectorAll('.group-order-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (item === dragSrc) return;
+      el.querySelectorAll('.group-order-item').forEach(i => i.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === item) return;
+      item.classList.remove('drag-over');
+      // Insert dragSrc before or after item depending on position
+      const srcRect = dragSrc.getBoundingClientRect();
+      const tgtRect = item.getBoundingClientRect();
+      if (srcRect.top < tgtRect.top) {
+        item.after(dragSrc);
+      } else {
+        item.before(dragSrc);
+      }
+    });
+  });
+}
+
+function getGroupOrderFromList() {
+  return [...document.querySelectorAll('#groupOrderList .group-order-item')]
+    .map(el => el.dataset.group);
 }
 
 document.getElementById('addServerBtn').addEventListener('click', () => {

@@ -22,6 +22,7 @@ const DEFAULT_CONFIG = {
   minCardWidth: 260,
   viewportScale: 1.0,
   remoteServers: [],
+  groupOrder: [],
 };
 
 app.use(express.json());
@@ -303,8 +304,18 @@ async function getContainers(config, opts = {}) {
     .filter(r => r._forceShow || r._hasWebInterface)
     .map(({ _forceShow, _hasWebInterface, ...r }) => r);
 
+  const order = config.groupOrder || [];
   return webResults.sort((a, b) => {
-    if (a.group !== b.group) return a.group.localeCompare(b.group);
+    if (a.group !== b.group) {
+      const ai = order.indexOf(a.group);
+      const bi = order.indexOf(b.group);
+      if (ai !== -1 || bi !== -1) {
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      }
+      return a.group.localeCompare(b.group);
+    }
     return a.name.localeCompare(b.name);
   });
 }
