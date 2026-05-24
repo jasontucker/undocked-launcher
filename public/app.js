@@ -63,7 +63,17 @@ function renderGroupedApps(apps) {
     if (!groups[g]) groups[g] = [];
     groups[g].push(app);
   }
-  const sortedGroups = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+  const order = config.groupOrder || [];
+  const sortedGroups = Object.keys(groups).sort((a, b) => {
+    const ai = order.indexOf(a);
+    const bi = order.indexOf(b);
+    if (ai !== -1 || bi !== -1) {
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    }
+    return a.localeCompare(b);
+  });
   return sortedGroups.map(group => `
     <div class="group-label">${escHtml(group)}</div>
     <div class="app-smart-grid">
