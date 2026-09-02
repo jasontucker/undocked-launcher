@@ -8,6 +8,7 @@
   --cf-color: #f6821f;
   --ts-color: #6366f1;
   --direct-color: #10b981;
+  --key-color: #eab308;
   --danger: #ef4444;
 }
 
@@ -183,6 +184,16 @@
 }
 .app-card:hover .btn-delete { opacity: 0.6; }
 .btn-delete:hover { opacity: 1 !important; transform: scale(1.12); }
+
+.btn-key {
+  color: var(--key-color);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-key:hover { transform: scale(1.12); }
 
 /* ── URL Dropdown ── */
 .url-dropdown { position: relative; }

@@ -353,6 +353,28 @@
     </div>
   </div>
 
+  <!-- API Key Modal -->
+  <div class="modal" id="apiKeyModal">
+    <div class="modal-background" data-close="apiKeyModal"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title" id="apiKeyModalTitle">API Key</p>
+        <button class="delete" aria-label="close" data-close="apiKeyModal"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <div class="control">
+            <input class="input is-small" type="text" id="apiKeyValue" readonly value="Loading…" />
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end gap-2">
+        <button class="button" data-close="apiKeyModal">Close</button>
+        <button class="button is-primary" id="copyApiKeyBtn">Copy</button>
+      </footer>
+    </div>
+  </div>
+
   <!-- Icon Picker Modal -->
   <div class="modal" id="iconPickerModal">
     <div class="modal-background" data-close="iconPickerModal"></div>

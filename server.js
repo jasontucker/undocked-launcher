@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.6.0';
+const VERSION = '1.7.0';
 
 const app = express();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -190,6 +190,132 @@ function tsHostnameFromTemplate(containerName) {
   }
 }
 
+// ── API Key discovery ────────────────────────────────────────────────────────
+// Reads each app's own API key from its config file on disk (read-only appdata
+// mount). Registry maps lowercased container name → { paths, format, field/section }.
+// Local containers only — remote servers don't share this container's appdata mount.
+// Only ever returns the single extracted field — never raw file contents.
+const APPDATA_ROOT = process.env.APPDATA_ROOT || '/appdata';
+
+const API_KEY_REGISTRY = {
+  // *arr family — Servarr apps all share the config.xml + <ApiKey> shape.
+  radarr:   { paths: ['config.xml'], format: 'xml-tag', field: 'ApiKey' },
+  sonarr:   { paths: ['config.xml'], format: 'xml-tag', field: 'ApiKey' },
+  lidarr:   { paths: ['config.xml'], format: 'xml-tag', field: 'ApiKey' },
+  prowlarr: { paths: ['config.xml'], format: 'xml-tag', field: 'ApiKey' },
+  readarr:  { paths: ['config.xml'], format: 'xml-tag', field: 'ApiKey' },
+  whisparr: { paths: ['config.xml'], format: 'xml-tag', field: 'ApiKey' },
+
+  bazarr:   { paths: ['config/config.yaml'], format: 'yaml-block', section: 'auth', field: 'apikey' },
+
+  sabnzbd:  { paths: ['sabnzbd.ini'], format: 'ini', section: 'misc', field: 'api_key' },
+  nzbget:   { format: 'unsupported' }, // ControlUsername/ControlPassword, not a single key
+
+  tautulli: { paths: ['config.ini'], format: 'ini', section: 'General', field: 'api_key' },
+
+  // Seerr / Overseerr / Jellyseerr rebrand — same settings.json shape across all three names
+  // and across native vs. binhex layouts (binhex nests one extra `seerr/` folder).
+  seerr:      { paths: ['settings.json', 'seerr/settings.json'], format: 'json-path', field: 'main.apiKey' },
+  overseerr:  { paths: ['settings.json', 'seerr/settings.json'], format: 'json-path', field: 'main.apiKey' },
+  jellyseerr: { paths: ['settings.json', 'seerr/settings.json'], format: 'json-path', field: 'main.apiKey' },
+};
+
+// Case-insensitive appdata folder resolution + cache (mirrors loadFolderViewGroups()).
+let appdataDirCache = null;
+let appdataDirCacheTime = 0;
+
+function loadAppdataDirs() {
+  const now = Date.now();
+  if (appdataDirCache && now - appdataDirCacheTime < 30_000) return appdataDirCache;
+  const map = {};
+  try {
+    for (const entry of fs.readdirSync(APPDATA_ROOT, { withFileTypes: true })) {
+      if (entry.isDirectory()) map[entry.name.toLowerCase()] = entry.name;
+    }
+  } catch (e) {
+    console.warn(`Appdata: failed to list ${APPDATA_ROOT}: ${e.message}`);
+  }
+  appdataDirCache = map;
+  appdataDirCacheTime = now;
+  return map;
+}
+
+function resolveAppdataDir(rawName) {
+  return loadAppdataDirs()[rawName.toLowerCase()] || null;
+}
+
+// Per-container override via homepage.apikey.* labels, same convention as labelVal().
+function resolveApiKeyEntry(rawName, labels) {
+  const overridePath = labelVal(labels, 'apikey.path');
+  if (overridePath) {
+    return {
+      paths: [overridePath],
+      format: labelVal(labels, 'apikey.format') || 'ini',
+      section: labelVal(labels, 'apikey.section') || undefined,
+      field: labelVal(labels, 'apikey.field') || 'api_key',
+    };
+  }
+  return API_KEY_REGISTRY[rawName.toLowerCase()] || null;
+}
+
+function extractXmlTag(content, field) {
+  const m = content.match(new RegExp(`<${field}[^>]*>([^<]*)</${field}>`, 'i'));
+  return m && m[1] ? m[1].trim() : null;
+}
+
+function extractIniField(content, section, field) {
+  const secMatch = content.match(new RegExp(`^\\[${section}\\]\\r?\\n([\\s\\S]*?)(?=^\\[|$(?![\\s\\S]))`, 'mi'));
+  const scope = secMatch ? secMatch[1] : content;
+  const m = scope.match(new RegExp(`^${field}\\s*=\\s*(.*)$`, 'mi'));
+  return m && m[1] ? m[1].trim() : null;
+}
+
+function extractYamlBlockField(content, section, field) {
+  const secMatch = content.match(new RegExp(`^${section}:\\r?\\n((?:[ \\t]+.*\\r?\\n?)*)`, 'm'));
+  if (!secMatch) return null;
+  const m = secMatch[1].match(new RegExp(`^[ \\t]+${field}:\\s*(.+)$`, 'm'));
+  return m && m[1] ? m[1].trim().replace(/^['"]|['"]$/g, '') : null;
+}
+
+function extractJsonPath(content, dottedField) {
+  let data;
+  try { data = JSON.parse(content); } catch { return null; }
+  const val = dottedField.split('.').reduce((o, k) => (o == null ? undefined : o[k]), data);
+  return val || null;
+}
+
+function getApiKey(rawName, labels) {
+  const entry = resolveApiKeyEntry(rawName, labels);
+  if (!entry || entry.format === 'unsupported') return null;
+  const dirName = resolveAppdataDir(rawName);
+  if (!dirName) return null;
+
+  for (const relPath of entry.paths) {
+    const filePath = path.join(APPDATA_ROOT, dirName, relPath);
+    if (!fs.existsSync(filePath)) continue;
+    try {
+      const content = fs.readFileSync(filePath, 'utf8');
+      let key = null;
+      if (entry.format === 'xml-tag')         key = extractXmlTag(content, entry.field);
+      else if (entry.format === 'ini')        key = extractIniField(content, entry.section, entry.field);
+      else if (entry.format === 'yaml-block') key = extractYamlBlockField(content, entry.section, entry.field);
+      else if (entry.format === 'json-path')  key = extractJsonPath(content, entry.field);
+      if (key) return key;
+    } catch (e) {
+      console.warn(`ApiKey: failed to read ${filePath}: ${e.message}`);
+    }
+  }
+  return null;
+}
+
+function hasApiKeyFile(rawName, labels) {
+  const entry = resolveApiKeyEntry(rawName, labels);
+  if (!entry || entry.format === 'unsupported') return false;
+  const dirName = resolveAppdataDir(rawName);
+  if (!dirName) return false;
+  return entry.paths.some(p => fs.existsSync(path.join(APPDATA_ROOT, dirName, p)));
+}
+
 async function inspectContainerWith(dockerClient, id) {
   try {
     return await dockerClient.getContainer(id).inspect();
@@ -295,6 +421,7 @@ async function getContainers(config, opts = {}) {
       tailscaleHostname: tsHostname,
       directUrl,
       port,
+      hasApiKey: useLocalFeatures ? hasApiKeyFile(rawName, labels) : false,
       _forceShow: labelVal(labels, 'enable') === 'true',
       _hasWebInterface: hasWebInterface,
     };
@@ -444,6 +571,24 @@ app.delete('/api/icon-override/:name', (req, res) => {
 app.post('/api/cache/clear', (req, res) => {
   remoteCache.clear();
   res.json({ ok: true });
+});
+
+// Returns a single local app's API key, resolved via the registry. Only the
+// extracted key is ever returned — never raw file contents.
+app.get('/api/apikey/:name', async (req, res) => {
+  try {
+    const list = await docker.listContainers({ all: false });
+    const match = list.find(c =>
+      (c.Names?.[0]?.replace(/^\//, '') || '').toLowerCase() === req.params.name.toLowerCase()
+    );
+    if (!match) return res.status(404).json({ error: 'container not found' });
+    const rawName = match.Names[0].replace(/^\//, '');
+    const key = getApiKey(rawName, match.Labels || {});
+    if (!key) return res.status(404).json({ error: 'no API key found' });
+    res.json({ key });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/debug/folderview', (req, res) => {

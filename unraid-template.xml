@@ -22,6 +22,7 @@
     [b]Config Storage:[/b] Where your settings (host IP, domains, display preferences, custom apps) are saved.[br][br]
     [b]Unraid Docker Templates:[/b] Optional. Used to auto-detect the Tailscale hostname set for each container in the Unraid Docker manager.[br][br]
     [b]FolderView Plus Config:[/b] Optional. Groups containers using your existing FolderView Plus folder assignments. Requires the FolderView Plus Unraid plugin.[br][br]
+    [b]Appdata (read-only, for API key discovery):[/b] Optional. Lets the dashboard read each supported app's own config file to show its API key via a reveal/copy button. Grants read access to your entire appdata share, not just API keys — see the README's security note before enabling.[br][br]
     [b]Tip:[/b] After starting the container, open Settings (gear icon) to set your Host IP, Tailnet Domain, and Cloudflare Base Domain.
   </Description>
 
@@ -79,6 +80,11 @@
       <ContainerDir>/folderview-config</ContainerDir>
       <Mode>ro</Mode>
     </Volume>
+    <Volume>
+      <HostDir>/mnt/user/appdata</HostDir>
+      <ContainerDir>/appdata</ContainerDir>
+      <Mode>ro</Mode>
+    </Volume>
   </Data>
 
   <Config
@@ -124,5 +130,16 @@
     Display="always"
     Required="false"
     Mask="false">/boot/config/plugins/folderview.plus</Config>
+
+  <Config
+    Name="Appdata (read-only, for API key discovery)"
+    Target="/appdata"
+    Default="/mnt/user/appdata"
+    Mode="ro"
+    Description="Read-only access to all app config files, used to read each app's own API key for the dashboard's reveal/copy button. Note: this grants read access to every app's full config on the array, not just the API key field — see README for details."
+    Type="Path"
+    Display="always"
+    Required="false"
+    Mask="false">/mnt/user/appdata</Config>
 
 </Container>

@@ -7,6 +7,7 @@ const ICON_OPEN    = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" strok
 const ICON_CHEVRON = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
 const ICON_EDIT    = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const ICON_TRASH = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+const ICON_KEY   = `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`;
 const ICON_SUN  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
 const ICON_MOON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 
@@ -170,6 +171,13 @@ function renderApps(servers, searchQuery = '') {
   grid.querySelectorAll('.url-option').forEach(link => {
     link.addEventListener('click', () => closeAllDropdowns());
   });
+
+  grid.querySelectorAll('[data-apikey]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openApiKeyModal(btn.dataset.apikey, btn.dataset.apikeyName);
+    });
+  });
 }
 
 function renderCard(app) {
@@ -196,6 +204,10 @@ function renderCard(app) {
     ? `<button class="action-btn btn-delete" data-delete="${escHtml(app.name)}" title="Remove">${ICON_TRASH}</button>`
     : '';
 
+  const keyBtn = app.hasApiKey
+    ? `<button class="action-btn btn-key" data-apikey="${escHtml(app.rawName)}" data-apikey-name="${escHtml(app.name)}" title="Show API Key">${ICON_KEY}</button>`
+    : '';
+
   const dropdown = options
     ? `<div class="url-dropdown">
         <button class="url-dropdown-btn" title="Open">${ICON_OPEN}${ICON_CHEVRON}</button>
@@ -210,7 +222,7 @@ function renderCard(app) {
         <div class="card-info">
           <div class="card-name">${escHtml(app.name)}</div>
         </div>
-        <div class="card-actions">${dropdown}${editBtn}${deleteBtn}</div>
+        <div class="card-actions">${dropdown}${keyBtn}${editBtn}${deleteBtn}</div>
       </div>
       ${app.description ? `<div class="card-desc">${escHtml(app.description)}</div>` : ''}
     </div>`;
@@ -547,6 +559,39 @@ function renderIconGrid(query) {
 
 document.getElementById('iconSearch').addEventListener('input', e => {
   renderIconGrid(e.target.value);
+});
+
+// ── API Key reveal ──────────────────────────────────────────────────────────
+async function openApiKeyModal(rawName, displayName) {
+  document.getElementById('apiKeyModalTitle').textContent = `${displayName} — API Key`;
+  const input = document.getElementById('apiKeyValue');
+  const copyBtn = document.getElementById('copyApiKeyBtn');
+  input.value = 'Loading…';
+  copyBtn.textContent = 'Copy';
+  copyBtn.disabled = true;
+  showModal('apiKeyModal');
+  try {
+    const res = await fetch(`/api/apikey/${encodeURIComponent(rawName)}`);
+    if (!res.ok) throw new Error('not found');
+    const data = await res.json();
+    input.value = data.key || '';
+    copyBtn.disabled = !data.key;
+  } catch {
+    input.value = 'Unable to retrieve key';
+  }
+}
+
+document.getElementById('copyApiKeyBtn').addEventListener('click', async () => {
+  const input = document.getElementById('apiKeyValue');
+  const btn = document.getElementById('copyApiKeyBtn');
+  try {
+    await navigator.clipboard.writeText(input.value);
+    btn.textContent = 'Copied!';
+  } catch (e) {
+    console.error('Clipboard write failed:', e);
+    btn.textContent = 'Failed';
+  }
+  setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
 });
 
 // ── Dropdown helpers ─────────────────────────────────────────────────────────

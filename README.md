@@ -16,6 +16,7 @@ A self-hosted homelab dashboard that runs in Docker on Unraid. Automatically dis
 - **Light and dark theme** — toggle in the navbar, persisted across sessions
 - **Mobile-friendly** — responsive layout with large tap targets on phones
 - **Custom apps** — add non-Docker services manually via the UI
+- **API key reveal** — click-to-reveal + copy the API key for supported apps (Radarr/Sonarr/Lidarr/Prowlarr/Readarr/Whisparr, Bazarr, SABnzbd, Tautulli, Overseerr/Jellyseerr/Seerr), read directly from each app's own config file
 - **Configurable display** — icon size, text size, button size, card width, and viewport scale via Settings
 - **Auto-hides system containers** — only shows containers with a web interface unless explicitly forced with `homepage.enable=true`
 - **Live version badge** — always know what's running
@@ -154,6 +155,35 @@ curl http://<unraid-ip>:7654/api/debug/folderview
 
 ---
 
+## API Key Reveal
+
+Cards for supported apps get a **key icon** button. Clicking it fetches the app's own API key on demand (nothing is loaded until you click) and shows it in a copy-to-clipboard popup.
+
+The key is read directly from each app's config file under the appdata mount — not from the app's own API — using a small registry in `server.js` (`API_KEY_REGISTRY`) that maps container name → config file path + format:
+
+| App | Config file | Field |
+|---|---|---|
+| Radarr / Sonarr / Lidarr / Prowlarr / Readarr / Whisparr | `config.xml` | `<ApiKey>` |
+| Bazarr | `config/config.yaml` | `auth.apikey` |
+| SABnzbd | `sabnzbd.ini` | `[misc] api_key` |
+| Tautulli | `config.ini` | `[General] api_key` |
+| Overseerr / Jellyseerr / Seerr | `settings.json` | `main.apiKey` |
+
+NZBGet isn't supported — it uses a control username/password pair, not a single API key. This feature is **local containers only** — apps discovered on a remote server (see Remote Servers in Settings) don't share this container's appdata mount, so they never show the key button.
+
+**Adding a new app:** add one entry to `API_KEY_REGISTRY` in `server.js` with the container name (lowercased), the relative config path(s), the format (`xml-tag` / `ini` / `yaml-block` / `json-path`), and the field (plus `section` for ini/yaml). No frontend changes needed — the key button and modal are entirely data-driven off the registry.
+
+**Per-container override:** if a container's name or config layout doesn't match the registry, override it with labels:
+```
+homepage.apikey.path=config/config.xml
+homepage.apikey.format=xml-tag
+homepage.apikey.field=ApiKey
+```
+
+> ⚠️ **Security note:** this feature requires mounting your entire Unraid appdata share read-only into this container (see Volume Mounts below), so it can read every app's config files — not just the API key field, though the app only ever *returns* the single extracted key, never raw file contents. This dashboard also has **no built-in authentication** — anyone who can reach its web port can now pull any discovered local app's API key on demand. If the dashboard isn't already behind Tailscale/Cloudflare Access or similar, don't expose its port publicly.
+
+---
+
 ## Volume Mounts
 
 | Host Path | Container Path | Purpose |
@@ -162,6 +192,7 @@ curl http://<unraid-ip>:7654/api/debug/folderview
 | `./config` | `/config` | Persistent settings |
 | `/boot/config/plugins/dockerMan/templates-user` | `/unraid-templates` | Tailscale hostname detection |
 | `/boot/config/plugins/folderview.plus` | `/folderview-config` | FolderView Plus groups |
+| `/mnt/user/appdata` | `/appdata` | API key discovery (read-only; see security note above) |
 
 ---
 
@@ -171,6 +202,7 @@ curl http://<unraid-ip>:7654/api/debug/folderview
 |---|---|
 | `GET /api/containers` | All discovered containers with resolved URLs |
 | `GET /api/config` | Current settings |
+| `GET /api/apikey/:name` | Resolved API key for one local container (by container name), or 404 |
 | `GET /api/debug/folderview` | FolderView Plus group mappings |
 | `GET /api/debug/:name` | Raw env vars and Tailscale detection for a container |
 
